@@ -9,18 +9,19 @@ import com.github.incognitojam.cube.game.world.Direction
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import java.awt.Font
 
-// FIXME (high priority) Add item quantities to hotbar
-class GuiItemHotbar(private val inventory: Inventory, private val font: FontTexture, private val guiTextures: TextureMap) : GuiItem() {
+class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: TextureMap) : GuiItem() {
 
     private val hotbarSize = inventory.width
     private val tileSize = 64F
     private val itemSize = 48F
 
+    private lateinit var hotbarFont: FontTexture
+    private lateinit var quantityTexts: Array<TextItem>
     private var selectedMesh: Mesh? = null
     private var itemsMesh: Mesh? = null
     private var blocksMesh: Mesh? = null
-    private var quantityTexts = Array(inventory.hotbarSize) { TextItem("", font) }
 
     override var width = tileSize * hotbarSize
     override var height = tileSize
@@ -28,6 +29,9 @@ class GuiItemHotbar(private val inventory: Inventory, private val font: FontText
     private val hotbarItems = Array(inventory.hotbarSize) { ItemStack() }
 
     override fun onInitialise() {
+        hotbarFont = FontTexture(Font("Arial", Font.BOLD, 16), GuiHud.CHARSET)
+        quantityTexts = Array(hotbarSize) { TextItem("", hotbarFont) }
+
         val positionsList = ArrayList<Float>()
         val textureCoordinatesList = ArrayList<Float>()
         val indicesList = ArrayList<Int>()
@@ -61,10 +65,10 @@ class GuiItemHotbar(private val inventory: Inventory, private val font: FontText
         var hotbarItemsNeedUpdating = false
         for (slotIndex in 0 until inventory.hotbarSize) {
             val slot = inventory.getSlot(slotIndex)!!
-            val slotItem = slot.itemStack.item
-            val hotbarItem = hotbarItems[slotIndex].item
+            val slotItemStack = slot.itemStack
+            val hotbarItemStack = hotbarItems[slotIndex]
 
-            if (slotItem != hotbarItem) {
+            if (slotItemStack != hotbarItemStack) {
                 hotbarItemsNeedUpdating = true
                 hotbarItems[slotIndex] = ItemStack(slot.itemStack)
             }
@@ -100,10 +104,18 @@ class GuiItemHotbar(private val inventory: Inventory, private val font: FontText
             shader.setUniform("projectionModelMatrix", projectionModelMatrix)
             shader.setUniform("colour", Vector4f(1f, 1f, 1f, 1f))
             shader.setUniform("hasTexture", 1)
-            shader.setUniform("texture_sampler", 1)
-
-            blocksMesh.texture?.bind()
             blocksMesh.onRender()
+        }
+
+        for (quantityText in quantityTexts) {
+            quantityText.mesh?.let { textMesh ->
+                val selectedRenderPosition = Vector3f(quantityText.renderPosition).add(renderPosition).add(0f, 0f, 1f)
+                val projectionModelMatrix = Transformation.getOrthographicProjectionModelMatrix(selectedRenderPosition, projectionMatrix)
+                shader.setUniform("projectionModelMatrix", projectionModelMatrix)
+                shader.setUniform("colour", Vector4f(0f, 0f, 0f, 1f))
+                shader.setUniform("hasTexture", 1)
+                textMesh.onRender()
+            }
         }
     }
 
@@ -152,6 +164,18 @@ class GuiItemHotbar(private val inventory: Inventory, private val font: FontText
 
         blocksMesh?.deleteBuffers()
         blocksMesh = Mesh(blocksPositionsList.toFloatArray(), blocksTextureCoordinatesList.toFloatArray(), blocksIndicesList.toIntArray(), Blocks.getTextureMap())
+
+        for ((index, quantityText, itemStack) in quantityTexts.withIndex().map { Triple(it.index, it.value, hotbarItems[it.index]) }) {
+            if (itemStack.quantity == 0 || itemStack.item == Items.AIR) {
+                quantityText.text = ""
+            } else {
+                quantityText.text = itemStack.quantity.toString()
+                quantityText.setPosition(
+                        -(hotbarSize * tileSize * .5F) + (index + 1) * tileSize - (tileSize - itemSize) - (quantityText.width / 2),
+                        itemSize - (quantityText.height / 2)
+                )
+            }
+        }
     }
 
 }

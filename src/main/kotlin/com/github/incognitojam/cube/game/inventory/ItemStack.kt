@@ -30,6 +30,22 @@ class ItemStack(var item: Item, quantity: Int) {
         quantity = itemStack.quantity
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ItemStack) return false
+
+        if (item != other.item) return false
+        if (quantity != other.quantity) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = item.hashCode()
+        result = 31 * result + quantity
+        return result
+    }
+
     override fun toString(): String {
         return "ItemStack(item='${item.name}', quantity=$quantity)"
     }

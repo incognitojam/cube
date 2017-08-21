@@ -15,7 +15,10 @@ abstract class GuiItem {
     abstract var width: Float
     abstract var height: Float
 
-    val position = Vector2f()
+    protected var x = 0f
+    protected var y = 0f
+    val position: Vector2f
+        get() = Vector2f(x, y)
     val renderPosition: Vector3f
         get() = Vector3f(position.x, position.y, Z_POS)
 
@@ -52,12 +55,11 @@ abstract class GuiItem {
     }
 
     fun setPosition(x: Float, y: Float) {
-        position.set(x, y)
+        this.x = x
+        this.y = y
     }
 
-    fun setPosition(position: Vector2f) {
-        this.position.set(position)
-    }
+    fun setPosition(position: Vector2f) = setPosition(position.x, position.y)
 
     override fun toString(): String {
         return "GuiItem(position=${MathsUtils.format(position, 3)}, mesh=$mesh)"
