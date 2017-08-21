@@ -1,0 +1,10 @@
+tmp
+vendor
+.idea
+.DS_Store
+out
+build
+.gradle
+*.log
+*.class
+*.iml
