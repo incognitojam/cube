@@ -5,10 +5,7 @@ import com.github.incognitojam.cube.engine.graphics.Mesh
 import com.github.incognitojam.cube.engine.graphics.ShaderProgram
 import com.github.incognitojam.cube.engine.graphics.Transformation
 import com.github.incognitojam.cube.engine.maths.MathsUtils
-import org.joml.Matrix4f
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector4f
+import org.joml.*
 
 abstract class GuiItem {
 
@@ -17,22 +14,18 @@ abstract class GuiItem {
 
     protected var x = 0f
     protected var y = 0f
-    val position: Vector2f
+    val position: Vector2fc
         get() = Vector2f(x, y)
-    val renderPosition: Vector3f
-        get() = Vector3f(position.x, position.y, Z_POS)
+    val renderPosition: Vector3fc
+        get() = Vector3f(position.x(), position.y(), Z_POS)
 
     var mesh: Mesh? = null
 
-    open fun onInitialise() {
+    open fun initialise() = Unit
 
-    }
+    open fun update() = Unit
 
-    open fun onUpdate() {
-
-    }
-
-    open fun onRender(shader: ShaderProgram, projectionMatrix: Matrix4f) {
+    open fun render(shader: ShaderProgram, projectionMatrix: Matrix4f) {
         mesh?.let { mesh ->
             // Set orthographic and model matrix for this HUD item
             val projectionModelMatrix = Transformation.getOrthographicProjectionModelMatrix(this, projectionMatrix)
@@ -42,16 +35,14 @@ abstract class GuiItem {
             shader.setUniform("hasTexture", hasTexture)
 
             // Render the mesh for this HUD item
-            mesh.onRender()
+            mesh.render()
         }
     }
 
-    open fun onResize(window: Window) {
+    open fun resize(window: Window) = Unit
 
-    }
-
-    open fun onCleanup() {
-        mesh?.onCleanup()
+    open fun delete() {
+        mesh?.delete()
     }
 
     fun setPosition(x: Float, y: Float) {
@@ -59,7 +50,7 @@ abstract class GuiItem {
         this.y = y
     }
 
-    fun setPosition(position: Vector2f) = setPosition(position.x, position.y)
+    fun setPosition(position: Vector2fc) = setPosition(position.x(), position.y())
 
     override fun toString(): String {
         return "GuiItem(position=${MathsUtils.format(position, 3)}, mesh=$mesh)"

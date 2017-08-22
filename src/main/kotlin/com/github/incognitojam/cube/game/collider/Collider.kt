@@ -24,7 +24,7 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
         position?.let { updateCollider(it) }
     }
 
-    fun onInitialise() {
+    fun initialise() {
         val positions = floatArrayOf(
                 // front
                 -halfWidth, 0f, halfWidth,
@@ -67,8 +67,10 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
         mesh = BasicMesh(positions, colours, indices)
     }
 
-    fun onCleanup() {
-        mesh.onCleanup()
+    fun delete() = mesh.delete(true)
+
+    fun doesCollide(entitySelf: Entity, position: Vector3f, world: World): Boolean {
+        return doesCollideWorld(position, world) || doesCollideEntity(entitySelf, position, world) != null
     }
 
     fun doesCollideWorld(position: Vector3f, world: World): Boolean {

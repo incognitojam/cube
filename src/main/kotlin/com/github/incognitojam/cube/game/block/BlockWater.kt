@@ -7,6 +7,6 @@ class BlockWater(id: Byte) : Block(id, true, false, false) {
 
     override fun getItem() = Items.WATER
 
-    override fun getTextureId(direction: Direction) = 14
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = 14
 
 }

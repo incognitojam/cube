@@ -16,7 +16,7 @@ class GuiHud(private val world: World): Gui() {
     private lateinit var crosshair: GuiItemCrosshair
     private lateinit var hotbar: GuiItemHotbar
 
-    override fun onInitialise() {
+    override fun initialise() {
         hudTextureMap = TextureMap("textures/gui/hud.png", 4)
 
         fontTexture = FontTexture(FONT, CHARSET)
@@ -40,8 +40,8 @@ class GuiHud(private val world: World): Gui() {
         debugTextItem.text = debugText
     }
 
-    override fun onResize(window: Window) {
-        super.onResize(window)
+    override fun resize(window: Window) {
+        super.resize(window)
 
         statusTextItem.setPosition(10f, window.height - 50f)
         debugTextItem.setPosition(10f, 10f)

@@ -7,8 +7,6 @@ import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL20.*
 import org.lwjgl.system.MemoryStack
 
-
-
 class ShaderProgram @Throws(Exception::class) constructor() {
 
     private var programId: Int = 0
@@ -18,7 +16,7 @@ class ShaderProgram @Throws(Exception::class) constructor() {
 
     private var bound = false
 
-    fun onInitialise() {
+    fun initialise() {
         programId = GL20.glCreateProgram()
         if (programId == 0) {
             throw Exception("Could not create Shader")
@@ -119,7 +117,7 @@ class ShaderProgram @Throws(Exception::class) constructor() {
         bound = false
     }
 
-    fun onCleanup() {
+    fun delete() {
         unbind()
         if (programId != 0) {
             GL20.glDeleteProgram(programId)

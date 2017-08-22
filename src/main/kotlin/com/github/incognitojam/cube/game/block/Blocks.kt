@@ -16,7 +16,7 @@ object Blocks {
     lateinit var WATER: Block
     lateinit var PUMPKIN: Block
 
-    fun onInitialise() {
+    fun initialise() {
         AIR = registerBlock(BlockAir(0))
         GRASS = registerBlock(BlockGrass(1))
         DIRT = registerBlock(BlockDirt(2))
@@ -29,9 +29,7 @@ object Blocks {
         textureMap = TextureMap("textures/blocks/blocks.png", 16)
     }
 
-    fun onCleanup() {
-        textureMap.onCleanup()
-    }
+    fun delete() = textureMap.delete()
 
     fun getBlockById(id: Byte): Block? {
         return registry[id]

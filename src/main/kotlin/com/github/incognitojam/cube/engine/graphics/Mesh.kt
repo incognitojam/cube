@@ -66,7 +66,7 @@ class Mesh(positions: FloatArray, textureCoordinates: FloatArray?, indices: IntA
         }
     }
 
-    fun onRender() {
+    fun render() {
         // Activate first texture bank
         glActiveTexture(GL_TEXTURE0)
 
@@ -105,11 +105,11 @@ class Mesh(positions: FloatArray, textureCoordinates: FloatArray?, indices: IntA
         glDeleteVertexArrays(vaoId)
     }
 
-    fun onCleanup() {
+    fun delete(deleteTexture: Boolean = true) {
         deleteBuffers()
 
         // Delete the texture
-        texture?.onCleanup()
+        if (deleteTexture) texture?.delete()
     }
 
     override fun toString(): String {

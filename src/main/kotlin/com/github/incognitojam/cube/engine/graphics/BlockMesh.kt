@@ -1,11 +1,12 @@
 package com.github.incognitojam.cube.engine.graphics
 
+import com.github.incognitojam.cube.game.block.Blocks
 import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryUtil
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class BlockMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLight: FloatArray, indices: IntArray, private val texture: Texture) {
+class BlockMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLight: FloatArray, indices: IntArray) {
 
     private val vaoId: Int
     private val vboIdList = ArrayList<Int>()
@@ -70,12 +71,12 @@ class BlockMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLi
         }
     }
 
-    fun onRender() {
+    fun render() {
         // Activate first texture bank
         GL13.glActiveTexture(GL13.GL_TEXTURE0)
 
-        // Bind the texture
-        texture.bind()
+        // Bind the blocks texture
+        Blocks.getTextureMap().bind()
 
         // Bind all vertex arrays
         GL30.glBindVertexArray(vaoId)
@@ -93,7 +94,7 @@ class BlockMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLi
         GL30.glBindVertexArray(0)
     }
 
-    fun onCleanup() {
+    fun delete() {
         for (vboIndex in 0 until vboIdList.size) {
             GL20.glDisableVertexAttribArray(vboIndex)
         }

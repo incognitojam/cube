@@ -3,16 +3,16 @@ package com.github.incognitojam.cube.engine
 interface IGameLogic {
 
     @Throws(Exception::class)
-    fun onInitialise(window: Window)
+    fun initialise(window: Window)
 
-    fun onStatus(frames: Int, updates: Int)
+    fun status(frames: Int, updates: Int)
 
-    fun onInput(window: Window, mouseInput: MouseInput)
+    fun input(window: Window, mouseInput: MouseInput)
 
-    fun onUpdate(window: Window, delta: Float, mouseInput: MouseInput)
+    fun update(window: Window, delta: Float, mouseInput: MouseInput)
 
-    fun onRender(window: Window)
+    fun render(window: Window)
 
-    fun onCleanup()
+    fun delete()
 
 }

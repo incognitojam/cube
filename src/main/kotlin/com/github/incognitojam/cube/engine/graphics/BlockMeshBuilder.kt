@@ -47,7 +47,7 @@ class BlockMeshBuilder {
                     ambientLight = LIGHT_BOTTOM
                 }
             }
-            val faceTextureCoordinates = block.getTextureCoordinates(direction)
+            val faceTextureCoordinates = block.getTextureCoordinates(direction, true)
             addFace(faceVertices, faceTextureCoordinates, ambientLight, scale)
         }
 

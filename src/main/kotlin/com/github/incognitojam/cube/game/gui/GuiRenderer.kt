@@ -5,14 +5,13 @@ import com.github.incognitojam.cube.engine.file.FileUtils
 import com.github.incognitojam.cube.engine.graphics.ShaderProgram
 import com.github.incognitojam.cube.engine.graphics.Transformation
 
-
 class GuiRenderer {
 
     private val guiShader = ShaderProgram()
 
     @Throws(Exception::class)
-    fun onInitialise() {
-        guiShader.onInitialise()
+    fun initialise() {
+        guiShader.initialise()
         guiShader.createVertexShader(FileUtils.loadTextResource("shaders/hud.vertex.glsl"))
         guiShader.createFragmentShader(FileUtils.loadTextResource("shaders/hud.fragment.glsl"))
         guiShader.link()
@@ -23,17 +22,17 @@ class GuiRenderer {
         guiShader.createUniform("hasTexture")
     }
 
-    fun onRender(window: Window, gui: Gui) {
+    fun render(window: Window, gui: Gui) {
         guiShader.bind()
 
         val orthographic = Transformation.getOrthographicProjectionMatrix(0, window.width, window.height, 0)
-        gui.onRender(guiShader, orthographic)
+        gui.render(guiShader, orthographic)
 
         guiShader.unbind()
     }
 
-    fun onCleanup() {
-        guiShader.onCleanup()
+    fun delete() {
+        guiShader.delete()
     }
 
 }

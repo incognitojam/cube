@@ -9,8 +9,8 @@ class BlockGrass(id: Byte) : Block(id) {
 
     override fun getItem() = Items.GRASS
 
-    override fun getTextureId(direction: Direction) = when (direction) {
-        UP -> 40
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = when (direction) {
+        UP -> if (itemDrop) 40 else 184
         DOWN -> 2
         NORTH -> 3
         EAST -> 3
@@ -22,7 +22,7 @@ class BlockGrass(id: Byte) : Block(id) {
         val GRASS_BRIGHT = Vector3f(13 / 255f, 178 / 255f, 10 / 255f)
         val GRASS_DEAD = Vector3f(140 / 255f, 82 / 255f, 51 / 255f)
 
-        fun getVegetationValue(percentage: Float): Vector3f {
+        fun getVegetationColour(percentage: Float): Vector3f {
             return Vector3f(GRASS_BRIGHT).mul(percentage).add(Vector3f(GRASS_DEAD).mul(1f - percentage))
         }
     }

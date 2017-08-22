@@ -21,29 +21,29 @@ class GamCraft : IGameLogic {
     private lateinit var guiRenderer: GuiRenderer
     private lateinit var player: EntityPlayer
 
-    override fun onInitialise(window: Window) {
-        Blocks.onInitialise()
-        Items.onInitialise()
+    override fun initialise(window: Window) {
+        Blocks.initialise()
+        Items.initialise()
 
         player = EntityPlayer(world, "IncognitoJam")
-        world.onInitialise(player)
+        world.initialise(player)
 
         guiRenderer = GuiRenderer()
-        guiRenderer.onInitialise()
+        guiRenderer.initialise()
         hud = GuiHud(world)
-        hud.onInitialise()
+        hud.initialise()
 
         val maximumHeight = world.getMaximumBlock(0, 0)!!.globalY + 30f
         player.setPositionWithoutColliding(.5F, maximumHeight, .5F)
         player.setRotation(0F, 0F)
     }
 
-    override fun onStatus(frames: Int, updates: Int) {
+    override fun status(frames: Int, updates: Int) {
         hud.setStatusText("FPS: $frames, UPS: $updates")
     }
 
-    override fun onInput(window: Window, mouseInput: MouseInput) {
-        player.onInput(window, mouseInput)
+    override fun input(window: Window, mouseInput: MouseInput) {
+        player.input(window, mouseInput)
 
         if (window.isKeyPressed(GLFW_KEY_C)) {
             world.worldRenderer.debug = !world.worldRenderer.debug
@@ -54,25 +54,26 @@ class GamCraft : IGameLogic {
         }
     }
 
-    override fun onUpdate(window: Window, delta: Float, mouseInput: MouseInput) {
+    override fun update(window: Window, delta: Float, mouseInput: MouseInput) {
         // Update camera based on mouse
         if (window.captureMouse) {
             val rotVec = mouseInput.displayVec
             player.addRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY)
         }
 
-        world.onUpdate(delta)
+        world.update(delta)
 
         val debugText = """Position: ${MathsUtils.format(player.position, 2)} (${MathsUtils.format(player.blockPosition)})
 Rotation: ${MathsUtils.format(player.rotation, 2)}
-Velocity: ${MathsUtils.format(player.velocity.length(), 2)}m/s
-Acceleration: ${MathsUtils.format(player.acceleration.length(), 2)}m/s/s
+Camera Rotation: ${MathsUtils.format(player.camera.rotation, 2)}
+Velocity: ${MathsUtils.format(player.velocity, 2)}m/s
+Acceleration: ${MathsUtils.format(player.acceleration, 2)}m/s/s
 Grounded: ${player.grounded}, Jumping: ${player.jumping}, Jump Cooldown: ${player.jumpCooldown} ticks
 Stood above ${player.groundLocation.block} at ${MathsUtils.format(player.groundLocation.globalPosition)}
 """
 
         hud.setDebugText(debugText)
-        hud.onUpdate()
+        hud.update()
     }
 
     private fun clear() {
@@ -80,27 +81,30 @@ Stood above ${player.groundLocation.block} at ${MathsUtils.format(player.groundL
         glClearColor(.15f, .35f, .65f, 1f)
     }
 
-    override fun onRender(window: Window) {
+    override fun render(window: Window) {
         clear()
 
         if (window.resized) {
             glViewport(0, 0, window.width, window.height)
             window.resized = false
 
-            hud.onResize(window)
+            hud.resize(window)
         }
 
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
-        world.onRender(window)
+        world.render(window)
         glDisable(GL_CULL_FACE)
-        guiRenderer.onRender(window, hud)
+        guiRenderer.render(window, hud)
     }
 
-    override fun onCleanup() {
-        world.onCleanup()
-        hud.onCleanup()
-        guiRenderer.onCleanup()
+    override fun delete() {
+        world.delete()
+        hud.delete()
+        guiRenderer.delete()
+
+        Blocks.delete()
+        Items.delete()
     }
 
     companion object {

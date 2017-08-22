@@ -9,7 +9,7 @@ class BlockPumpkin(id: Byte) : Block(id) {
 
     override fun getItem() = Items.PUMPKIN
 
-    override fun getTextureId(direction: Direction) = when(direction) {
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = when(direction) {
         NORTH -> 119
         UP -> 102
         else -> 118

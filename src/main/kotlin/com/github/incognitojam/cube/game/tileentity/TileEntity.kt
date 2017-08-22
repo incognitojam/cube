@@ -2,15 +2,15 @@ package com.github.incognitojam.cube.game.tileentity
 
 class TileEntity {
 
-    fun onInitialise() {
+    fun initialise() {
 
     }
 
-    fun onUpdate(delta: Float) {
+    fun update(delta: Float) {
 
     }
 
-    fun onCleanup() {
+    fun delete() {
 
     }
 

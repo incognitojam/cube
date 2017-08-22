@@ -7,6 +7,6 @@ class BlockGravel(id: Byte) : Block(id) {
 
     override fun getItem() = Items.GRAVEL
 
-    override fun getTextureId(direction: Direction) = 19
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = 19
 
 }

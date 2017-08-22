@@ -13,10 +13,10 @@ abstract class Block(val id: Byte, val visible: Boolean = true, val opaque: Bool
         return ItemStack(getItem(), 1)
     }
 
-    abstract fun getTextureId(direction: Direction): Int
+    abstract fun getTextureId(direction: Direction, itemDrop: Boolean): Int
 
-    fun getTextureCoordinates(direction: Direction) =
-            Blocks.getTextureMap().getTextureCoordinates(getTextureId(direction))
+    fun getTextureCoordinates(direction: Direction, itemDrop: Boolean = false)
+            = Blocks.getTextureMap().getTextureCoordinates(getTextureId(direction, itemDrop))
 
     override fun equals(other: Any?): Boolean {
         return other is Block && other.id == id

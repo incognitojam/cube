@@ -9,7 +9,7 @@ class GuiItemCrosshair(private val textureMap: TextureMap) : GuiItem() {
     override var width = 32F
     override var height = width
 
-    override fun onInitialise() {
+    override fun initialise() {
         val positions = floatArrayOf(
                 -0.5f, -0.5f, Z_POS,
                 -0.5f, 0.5f, Z_POS,

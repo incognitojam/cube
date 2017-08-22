@@ -25,21 +25,21 @@ class GameEngine(windowTitle: String, width: Int, height: Int, vSync: Boolean, p
 
     override fun run() {
         try {
-            onInit()
+            initialise()
             startGameLoop()
         } catch (exception: Exception) {
             exception.printStackTrace()
         } finally {
-            onCleanup()
+            delete()
         }
     }
 
     @Throws(Exception::class)
-    private fun onInit() {
+    private fun initialise() {
         Timer.start("gameLoop")
-        window.onInitialise()
-        mouseInput.onInitialise(window)
-        gameLogic.onInitialise(window)
+        window.initialise()
+        mouseInput.initialise(window)
+        gameLogic.initialise(window)
     }
 
     private fun startGameLoop() {
@@ -53,7 +53,7 @@ class GameEngine(windowTitle: String, width: Int, height: Int, vSync: Boolean, p
             frames++
             if (difference > 1) {
                 lastSecond = currentTime
-                gameLogic.onStatus(frames, updates)
+                gameLogic.status(frames, updates)
                 frames = 0
                 updates = 0
             }
@@ -61,15 +61,15 @@ class GameEngine(windowTitle: String, width: Int, height: Int, vSync: Boolean, p
             elapsedTime = Timer.getElapsedTime("gameLoop")
             accumulator += elapsedTime
 
-            onInput()
+            input()
 
             while (accumulator >= interval) {
-                onUpdate(interval.toFloat())
+                update(interval.toFloat())
                 updates++
                 accumulator -= interval
             }
 
-            onRender()
+            render()
 
             // If vSync has not been enabled, sync manually
             if (!window.vSync) {
@@ -78,7 +78,7 @@ class GameEngine(windowTitle: String, width: Int, height: Int, vSync: Boolean, p
         }
     }
 
-    private fun onCleanup() = gameLogic.onCleanup()
+    private fun delete() = gameLogic.delete()
 
     private fun sync() {
         val loopSlot = 1f / TARGET_FPS
@@ -91,15 +91,15 @@ class GameEngine(windowTitle: String, width: Int, height: Int, vSync: Boolean, p
         }
     }
 
-    private fun onInput() {
-        mouseInput.onInput(window)
-        gameLogic.onInput(window, mouseInput)
+    private fun input() {
+        mouseInput.input(window)
+        gameLogic.input(window, mouseInput)
     }
 
-    private fun onUpdate(delta: Float) = gameLogic.onUpdate(window, delta, mouseInput)
+    private fun update(delta: Float) = gameLogic.update(window, delta, mouseInput)
 
-    private fun onRender() {
-        gameLogic.onRender(window)
+    private fun render() {
+        gameLogic.render(window)
         window.update()
     }
 

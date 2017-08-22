@@ -31,16 +31,16 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
     var blockMesh: ChunkMesh? = null
     var waterMesh: WaterMesh? = null
 
-    fun onInitialise() {
+    fun initialise() {
         world.generator.generateChunk(this)
     }
 
-    fun onUpdate(delta: Float) {
+    fun update(delta: Float) {
     }
 
-    fun onCleanup() {
-        blockMesh?.onCleanup()
-        waterMesh?.onCleanup()
+    fun delete() {
+        blockMesh?.delete()
+        waterMesh?.delete()
     }
 
     fun generateBlocks(generator: (Int) -> Block) {
@@ -57,17 +57,19 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
         }
     }
 
-    fun generateMesh() {
+    fun buildMesh() {
         if (empty) {
-            blockMesh?.onCleanup()
+            blockMesh?.delete()
             blockMesh = null
-            waterMesh?.onCleanup()
+            waterMesh?.delete()
             waterMesh = null
 
             blockMeshDirty = false
             waterMeshDirty = false
             return
         }
+
+        if (!blockMeshDirty && !waterMeshDirty) return
 
         val blockMeshBuilder = ChunkMeshBuilder()
         val waterMeshBuilder = WaterMeshBuilder()
@@ -142,6 +144,10 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
     fun setDirty() {
         blockMeshDirty = true
         waterMeshDirty = true
+    }
+
+    fun isDirty(): Boolean {
+        return blockMeshDirty || waterMeshDirty
     }
 
     private fun getBlockId(index: Int): Byte? {

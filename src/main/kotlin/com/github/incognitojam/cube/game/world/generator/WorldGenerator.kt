@@ -49,9 +49,9 @@ class ComplexGenerator(seed: Long) : AbstractWorldGenerator("ComplexGenerator", 
     }
 
     object SurfaceLayerGenerator : LayerGenerator {
-        override fun getMinimumChunkY() = 3
+        override fun getMinimumChunkY() = 1
 
-        override fun getMaximumChunkY() = 4
+        override fun getMaximumChunkY() = 2
 
         override fun getChunkGenerator(worldGenerator: WorldGenerator, chunk: Chunk): ChunkGenerator {
             return object : ChunkGenerator {
@@ -103,9 +103,9 @@ class ComplexGenerator(seed: Long) : AbstractWorldGenerator("ComplexGenerator", 
     }
 
     object CaveLayerGenerator : LayerGenerator {
-        override fun getMinimumChunkY() = 0
+        override fun getMinimumChunkY() = -3
 
-        override fun getMaximumChunkY() = 2
+        override fun getMaximumChunkY() = 0
 
         override fun getChunkGenerator(worldGenerator: WorldGenerator, chunk: Chunk): ChunkGenerator {
             return object : ChunkGenerator {

@@ -6,6 +6,7 @@ import com.github.incognitojam.cube.engine.graphics.BasicMesh
 import com.github.incognitojam.cube.engine.graphics.Camera
 import com.github.incognitojam.cube.engine.graphics.ShaderProgram
 import com.github.incognitojam.cube.engine.graphics.Transformation
+import com.github.incognitojam.cube.game.world.chunk.Chunk
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11.*
@@ -23,7 +24,7 @@ class WorldRenderer {
     var debug = false
 
     @Throws(Exception::class)
-    fun onInitialise() {
+    fun initialise() {
         val positions = floatArrayOf(
                 0f, 0f, 1f,
                 1f, 0f, 1f,
@@ -75,7 +76,7 @@ class WorldRenderer {
         errorMesh = BasicMesh(positions, errorColours, indices)
         targetBlockMesh = BasicMesh(positions, targetColours, indices)
 
-        blockShader.onInitialise()
+        blockShader.initialise()
         blockShader.createVertexShader(FileUtils.loadTextResource("shaders/world.vertex.glsl"))
         blockShader.createFragmentShader(FileUtils.loadTextResource("shaders/world.fragment.glsl"))
         blockShader.link()
@@ -85,7 +86,7 @@ class WorldRenderer {
         blockShader.createUniform("textureSampler")
 
 
-        waterShader.onInitialise()
+        waterShader.initialise()
         waterShader.createVertexShader(FileUtils.loadTextResource("shaders/water.vertex.glsl"))
         waterShader.createFragmentShader(FileUtils.loadTextResource("shaders/water.fragment.glsl"))
         waterShader.link()
@@ -95,7 +96,7 @@ class WorldRenderer {
         waterShader.createUniform("textureSampler")
 
 
-        basicShader.onInitialise()
+        basicShader.initialise()
         basicShader.createVertexShader(FileUtils.loadTextResource("shaders/basic.vertex.glsl"))
         basicShader.createFragmentShader(FileUtils.loadTextResource("shaders/basic.fragment.glsl"))
         basicShader.link()
@@ -104,7 +105,7 @@ class WorldRenderer {
         basicShader.createUniform("modelViewMatrix")
 
 
-        entityShader.onInitialise()
+        entityShader.initialise()
         entityShader.createVertexShader(FileUtils.loadTextResource("shaders/entity.vertex.glsl"))
         entityShader.createFragmentShader(FileUtils.loadTextResource("shaders/entity.fragment.glsl"))
         entityShader.link()
@@ -114,7 +115,7 @@ class WorldRenderer {
         entityShader.createUniform("textureSampler")
     }
 
-    fun onRender(window: Window, camera: Camera, world: World) {
+    fun render(window: Window, camera: Camera, world: World) {
         blockShader.bind()
 
         val projectionMatrix = Transformation.getPerspectiveProjectionMatrix(FOV, window.aspectRatio, Z_NEAR, Z_FAR)
@@ -122,17 +123,18 @@ class WorldRenderer {
         blockShader.setUniform("textureSampler", 0)
 
         val viewMatrix = camera.getViewMatrix()
+        val chunks = ArrayList<Chunk>()
+        world.forChunksInRadius(world.player.location.chunk!!.chunkPosition, 3) { _, chunk -> chunk?.let { chunks.add(it) } }
 
-        val chunks = world.getChunks()
         for (chunk in chunks) {
             val blockMesh = chunk.blockMesh ?: continue
             val modelMatrix = Transformation.buildChunkModelMatrix(chunk)
             val modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
             blockShader.setUniform("modelViewMatrix", modelViewMatrix)
-            blockMesh.onRender()
+            blockMesh.render()
         }
-        blockShader.unbind()
 
+        blockShader.unbind()
 
         waterShader.bind()
         waterShader.setUniform("projectionMatrix", projectionMatrix)
@@ -142,7 +144,7 @@ class WorldRenderer {
             val modelMatrix = Transformation.buildChunkModelMatrix(chunk)
             val modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
             waterShader.setUniform("modelViewMatrix", modelViewMatrix)
-            waterMesh.onRender()
+            waterMesh.render()
         }
         waterShader.unbind()
 
@@ -158,7 +160,7 @@ class WorldRenderer {
             modelMatrix = Transformation.buildEntityModelMatrix(entity)
             modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
             entityShader.setUniform("modelViewMatrix", modelViewMatrix)
-            entity.onRender(entityShader, modelViewMatrix)
+            entity.render(entityShader, modelViewMatrix)
         }
 
         entityShader.unbind()
@@ -174,7 +176,7 @@ class WorldRenderer {
         modelMatrix = Transformation.buildModelMatrix(Vector3f(targetPos), Vector3f(), Vector3f())
         modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
         basicShader.setUniform("modelViewMatrix", modelViewMatrix)
-        targetBlockMesh.onRender(GL_LINE_LOOP)
+        targetBlockMesh.render(GL_LINE_LOOP)
 
         if (debug) {
             for (entity in entities) {
@@ -184,12 +186,12 @@ class WorldRenderer {
                 modelMatrix = Transformation.buildModelMatrix(Vector3f(collider.collidingBlockPos), Vector3f(), Vector3f())
                 modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
                 basicShader.setUniform("modelViewMatrix", modelViewMatrix)
-                errorMesh.onRender(GL_LINE_LOOP)
+                errorMesh.render(GL_LINE_LOOP)
 
                 modelMatrix = Transformation.buildModelMatrix(Vector3f(entity.position), Vector3f(), Vector3f())
                 modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
                 basicShader.setUniform("modelViewMatrix", modelViewMatrix)
-                entityColliderMesh.onRender(GL_LINE_LOOP)
+                entityColliderMesh.render(GL_LINE_LOOP)
             }
         }
 
@@ -198,9 +200,7 @@ class WorldRenderer {
         basicShader.unbind()
     }
 
-    fun onCleanup() {
-        blockShader.onCleanup()
-    }
+    fun delete() = blockShader.delete()
 
     companion object {
         val FOV = 100.0F

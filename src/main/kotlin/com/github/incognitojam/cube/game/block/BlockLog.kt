@@ -8,7 +8,7 @@ class BlockLog(id: Byte) : Block(id) {
 
     override fun getItem() = Items.LOG
 
-    override fun getTextureId(direction: Direction) = when (direction) {
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = when (direction) {
         NORTH, EAST, SOUTH, WEST -> 20
         UP, DOWN -> 21
     }

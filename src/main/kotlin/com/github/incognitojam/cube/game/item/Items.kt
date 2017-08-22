@@ -16,7 +16,7 @@ object Items {
     lateinit var WATER: Item
     lateinit var PUMPKIN: Item
 
-    fun onInitialise() {
+    fun initialise() {
         AIR = registerItem(ItemAir(0))
         GRASS = registerItem(ItemGrass(1))
         DIRT = registerItem(ItemDirt(2))
@@ -29,8 +29,8 @@ object Items {
         textureMap = TextureMap("textures/items/items.png", 16)
     }
 
-    fun onCleanup() {
-        textureMap.onCleanup()
+    fun delete() {
+        textureMap.delete()
     }
 
     fun getItemById(id: Byte): Item? {

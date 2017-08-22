@@ -8,32 +8,30 @@ open class Gui {
 
     private val guiItems = ArrayList<GuiItem>()
 
-    open fun onInitialise() {
+    open fun initialise() = Unit
 
+    open fun update() {
+        guiItems.forEach(GuiItem::update)
     }
 
-    open fun onUpdate() {
-        guiItems.forEach(GuiItem::onUpdate)
-    }
-
-    open fun onRender(shader: ShaderProgram, projectionMatrix: Matrix4f) {
+    open fun render(shader: ShaderProgram, projectionMatrix: Matrix4f) {
         guiItems.forEach {
             shader.setUniform("texture_sampler", 0)
-            it.onRender(shader, projectionMatrix)
+            it.render(shader, projectionMatrix)
         }
     }
 
-    open fun onResize(window: Window) {
-        guiItems.forEach { it.onResize(window) }
+    open fun resize(window: Window) {
+        guiItems.forEach { it.resize(window) }
     }
 
-    open fun onCleanup() {
-        guiItems.forEach(GuiItem::onCleanup)
+    open fun delete() {
+        guiItems.forEach(GuiItem::delete)
     }
 
     fun addGuiItem(guiItem: GuiItem) {
         guiItems.add(guiItem)
-        guiItem.onInitialise()
+        guiItem.initialise()
     }
 
 }

@@ -7,6 +7,6 @@ class BlockStone(id: Byte) : Block(id) {
 
     override fun getItem() = Items.STONE
 
-    override fun getTextureId(direction: Direction) = 1
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = 1
 
 }

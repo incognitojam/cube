@@ -17,7 +17,7 @@ open class Texture private constructor(val width: Int, val height: Int, protecte
         glBindTexture(GL_TEXTURE_2D, id)
     }
 
-    fun onCleanup() {
+    fun delete() {
         glDeleteTextures(id)
     }
 

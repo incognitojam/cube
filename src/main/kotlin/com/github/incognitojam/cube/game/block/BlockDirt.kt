@@ -7,6 +7,6 @@ class BlockDirt(id: Byte) : Block(id) {
 
     override fun getItem() = Items.DIRT
 
-    override fun getTextureId(direction: Direction) = 2
+    override fun getTextureId(direction: Direction, itemDrop: Boolean) = 2
 
 }

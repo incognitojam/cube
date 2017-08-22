@@ -76,7 +76,7 @@ class WaterMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLi
         }
     }
 
-    fun onRender() {
+    fun render() {
         // Activate first texture bank
         glActiveTexture(GL_TEXTURE0)
 
@@ -99,7 +99,7 @@ class WaterMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLi
         glBindVertexArray(0)
     }
 
-    fun onCleanup(cleanupTexture: Boolean = false) {
+    fun delete(deleteTexture: Boolean = false) {
         glDisableVertexAttribArray(0)
 
         // Delete the VBOs
@@ -108,9 +108,9 @@ class WaterMesh(positions: FloatArray, textureCoordinates: FloatArray, ambientLi
             glDeleteBuffers(vboId)
         }
 
-        if (cleanupTexture) {
+        if (deleteTexture) {
             // Delete the texture
-            texture.onCleanup()
+            texture.delete()
         }
 
         // Delete the VAO

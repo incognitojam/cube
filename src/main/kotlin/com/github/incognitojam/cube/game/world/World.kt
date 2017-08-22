@@ -26,11 +26,11 @@ class World(val name: String, val seed: Long) {
     lateinit var player: EntityPlayer
     private val entities = ArrayList<Entity>()
 
-    fun onInitialise(player: EntityPlayer) {
+    fun initialise(player: EntityPlayer) {
         this.player = player
 
         spawnEntity(player)
-        worldRenderer.onInitialise()
+        worldRenderer.initialise()
 
         // Generate the world
         println("Generating world..")
@@ -43,7 +43,7 @@ class World(val name: String, val seed: Long) {
                 for (chunkZ in -5..5) {
                     val chunkPosition = Vector3i(chunkX, chunkY, chunkZ)
                     val chunk = Chunk(this, chunkPosition)
-                    chunk.onInitialise()
+                    chunk.initialise()
 
                     val chunkHorizontal = Vector2i(chunkX, chunkZ)
                     val chunksVertical = chunkMap[chunkHorizontal] ?: HashMap()
@@ -56,41 +56,81 @@ class World(val name: String, val seed: Long) {
 
         println("\tGenerating meshes..")
         val meshTimer = Timer.start("generateWorld:genMesh")
-        chunkMap.values.flatMap { it.values }.forEach { it.generateMesh() }
+        chunkMap.values.flatMap { it.values }.forEach { it.buildMesh() }
         println("\tFinished generating meshes in $meshTimer seconds.")
 
         println("Finished generating world in $worldTimer seconds.")
     }
 
-    fun onUpdate(delta: Float) {
-        chunkMap.values.flatMap { it.values }.forEach { it.onUpdate(delta) }
+    fun update(delta: Float) {
+        val playerChunk = player.location.chunk!!.chunkPosition
+        forChunksInRadius(playerChunk, 5) { chunkPos, chunk ->
+            if (chunk == null) {
+                if (!chunkGenerationQueue.contains(chunkPos)) chunkGenerationQueue.addLast(chunkPos)
+                return@forChunksInRadius
+            }
+
+            chunk.update(delta)
+            if (chunk.isDirty() && !meshGenerationQueue.contains(chunkPos)) {
+                meshGenerationQueue.addLast(chunkPos)
+            }
+        }
 
         val iterator = entities.iterator()
         while (iterator.hasNext()) {
             val entity = iterator.next()
-            entity.onUpdate(delta)
+            entity.update(delta)
             if (entity.dead) {
                 iterator.remove()
-                entity.onCleanup()
+                entity.delete()
             }
+        }
+
+        var chunkCount = 5
+        while (chunkCount > 0 && chunkGenerationQueue.isNotEmpty()) {
+            val chunkPos = chunkGenerationQueue.pop()
+            if (chunkMap[Vector2i(chunkPos.x, chunkPos.z)]?.containsKey(chunkPos.y) != true) {
+                val chunk = Chunk(this, chunkPos)
+                chunk.initialise()
+
+                val chunkHorizontal = Vector2i(chunk.x, chunk.z)
+                val chunksVertical = chunkMap[chunkHorizontal] ?: HashMap()
+                chunksVertical[chunk.y] = chunk
+                chunkMap[chunkHorizontal] = chunksVertical
+            }
+            chunkCount--
+        }
+
+        var meshCount = 10
+        while (meshCount > 0 && meshGenerationQueue.isNotEmpty()) {
+            val chunk = getChunk(meshGenerationQueue.pop())
+            if (chunk != null && chunk.isDirty()) chunk.buildMesh()
+            meshCount--
         }
     }
 
-    fun onRender(window: Window) {
-        worldRenderer.onRender(window, player.camera, this)
+    fun render(window: Window) {
+        worldRenderer.render(window, player.camera, this)
     }
 
-    fun onCleanup() {
-        chunkMap.values.flatMap { it.values }.forEach { it.onCleanup() }
+    fun delete() {
+        chunkMap.values.flatMap { it.values }.forEach { it.delete() }
     }
 
     fun getChunks(): List<Chunk> {
         return chunkMap.values.flatMap { it.values }
     }
 
-    fun getChunk(chunkPosition: Vector3i): Chunk? {
-        return chunkMap[Vector2i(chunkPosition.x, chunkPosition.z)]?.get(chunkPosition.y)
+    fun forChunksInRadius(origin: Vector3i, radius: Int, callback: (Vector3i, Chunk?) -> Unit) {
+        for (dx in -radius..radius) for (dy in -radius..radius) for (dz in -radius..radius) {
+            val chunkPos = Vector3i(origin).add(dx, dy, dz)
+            callback.invoke(chunkPos, getChunk(chunkPos))
+        }
     }
+
+    fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int) = chunkMap[Vector2i(chunkX, chunkZ)]?.get(chunkY)
+
+    fun getChunk(chunkPosition: Vector3i) = getChunk(chunkPosition.x, chunkPosition.y, chunkPosition.z)
 
     fun getMaximumBlock(globalX: Int, globalZ: Int): Location? {
         val chunkPos = Vector2i(Location.globalToChunk(globalX), Location.globalToChunk(globalZ))
@@ -120,7 +160,7 @@ class World(val name: String, val seed: Long) {
 
     fun <T : Entity> spawnEntity(entity: T): T {
         entities.add(entity)
-        entity.onInitialise()
+        entity.initialise()
         return entity
     }
 

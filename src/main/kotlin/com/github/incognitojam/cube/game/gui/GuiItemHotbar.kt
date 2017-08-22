@@ -28,7 +28,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
 
     private val hotbarItems = Array(inventory.hotbarSize) { ItemStack() }
 
-    override fun onInitialise() {
+    override fun initialise() {
         hotbarFont = FontTexture(Font("Arial", Font.BOLD, 16), GuiHud.CHARSET)
         quantityTexts = Array(hotbarSize) { TextItem("", hotbarFont) }
 
@@ -59,8 +59,8 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
         updateHotbarItems()
     }
 
-    override fun onUpdate() {
-        super.onUpdate()
+    override fun update() {
+        super.update()
 
         var hotbarItemsNeedUpdating = false
         for (slotIndex in 0 until inventory.hotbarSize) {
@@ -77,8 +77,8 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
         if (hotbarItemsNeedUpdating) updateHotbarItems()
     }
 
-    override fun onRender(shader: ShaderProgram, projectionMatrix: Matrix4f) {
-        super.onRender(shader, projectionMatrix)
+    override fun render(shader: ShaderProgram, projectionMatrix: Matrix4f) {
+        super.render(shader, projectionMatrix)
 
         selectedMesh?.let { selectedMesh ->
             val selectedRenderPosition = Vector3f(renderPosition).add(tileSize * (inventory.selectedIndex - (hotbarSize * 0.5f)), 0f, .5f)
@@ -86,7 +86,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
             shader.setUniform("projectionModelMatrix", projectionModelMatrix)
             shader.setUniform("colour", Vector4f(1f, 1f, 1f, 1f))
             shader.setUniform("hasTexture", 1)
-            selectedMesh.onRender()
+            selectedMesh.render()
         }
 
         itemsMesh?.let { itemsMesh ->
@@ -95,7 +95,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
             shader.setUniform("projectionModelMatrix", projectionModelMatrix)
             shader.setUniform("colour", Vector4f(1f, 1f, 1f, 1f))
             shader.setUniform("hasTexture", 1)
-            itemsMesh.onRender()
+            itemsMesh.render()
         }
 
         blocksMesh?.let { blocksMesh ->
@@ -104,7 +104,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
             shader.setUniform("projectionModelMatrix", projectionModelMatrix)
             shader.setUniform("colour", Vector4f(1f, 1f, 1f, 1f))
             shader.setUniform("hasTexture", 1)
-            blocksMesh.onRender()
+            blocksMesh.render()
         }
 
         for (quantityText in quantityTexts) {
@@ -114,7 +114,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
                 shader.setUniform("projectionModelMatrix", projectionModelMatrix)
                 shader.setUniform("colour", Vector4f(0f, 0f, 0f, 1f))
                 shader.setUniform("hasTexture", 1)
-                textMesh.onRender()
+                textMesh.render()
             }
         }
     }

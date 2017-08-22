@@ -28,7 +28,7 @@ class MouseInput {
     var scrollX = 0.0
     var scrollY = 0.0
 
-    fun onInitialise(window: Window) {
+    fun initialise(window: Window) {
         glfwSetCursorPosCallback(window.windowHandle) { _, xPos, yPos ->
             currentPos.x = xPos
             currentPos.y = yPos
@@ -44,7 +44,7 @@ class MouseInput {
         }
     }
 
-    fun onInput(window: Window) {
+    fun input(window: Window) {
         displayVec.x = 0f
         displayVec.y = 0f
 //        if (previousPos.x > 0 && previousPos.y > 0 && inWindow) {

@@ -2,6 +2,7 @@ package com.github.incognitojam.cube.engine.graphics
 
 import com.github.incognitojam.cube.engine.maths.MathsUtils
 import com.github.incognitojam.cube.engine.maths.clone
+import com.github.incognitojam.cube.engine.maths.toRadians
 import com.github.incognitojam.cube.game.block.Block
 import com.github.incognitojam.cube.game.entity.Entity
 import com.github.incognitojam.cube.game.world.Direction
@@ -9,26 +10,34 @@ import com.github.incognitojam.cube.game.world.Location
 import com.github.incognitojam.cube.game.world.World
 import org.joml.*
 
-class Camera {
+class Camera(val eyeHeight: Float) {
 
     private val viewMatrix = Matrix4f()
     private val tmp = Vector3f()
 
-    private var x: Float = 0f
-    private var y: Float = 0f
-    private var z: Float = 0f
+    var x: Float = 0f
+        private set
+    var y: Float = 0f
+        private set
+    var z: Float = 0f
+        private set
 
     val position: Vector3f
-        get() = Vector3f(x, y, z)
+        get() = Vector3f(x, y + eyeHeight, z)
 
-    private var pitch: Float = 0f
-    private var yaw: Float = 0f
+    var yaw = 0f
+        private set(value) {
+            field = (value % 360f + 360f) % 360f
+        }
+    var pitch = 0f
+        private set(value) {
+            field = (value % 360f + 360f) % 360f
+        }
 
-    val rotation: Vector2f
-        get() = Vector2f(pitch, yaw)
-
-    val rotationRadians: Vector3f
-        get() = Vector3f(Math.toRadians(yaw.toDouble()).toFloat(), Math.toRadians(pitch.toDouble()).toFloat(), 0f)
+    val rotation: Vector2fc
+        get() = Vector2f(yaw, pitch).toImmutable()
+    val rotationRadians: Vector3fc
+        get() = Vector3f(yaw.toRadians(), pitch.toRadians(), 0f).toImmutable()
 
     val forwardRay: Vector3f
         get() = viewMatrix.positiveZ(tmp).negate()
@@ -37,27 +46,28 @@ class Camera {
         return Transformation.getViewMatrix(this, viewMatrix)
     }
 
-    fun setPosition(position: Vector3f) {
-        this.x = position.x
-        this.y = position.y
-        this.z = position.z
-    }
-
     fun setPosition(x: Float, y: Float, z: Float) {
         this.x = x
         this.y = y
         this.z = z
     }
 
-    fun setRotation(rotation: Vector2f) {
-        this.yaw = rotation.x
-        this.pitch = rotation.y
-    }
+    fun setPosition(position: Vector3f) = setPosition(position.x, position.y, position.z)
+
+    fun addPosition(deltaX: Float, deltaY: Float, deltaZ: Float) = setPosition(x + deltaX, y + deltaY, z + deltaZ)
+
+    fun addPosition(deltaPosition: Vector3f) = setPosition(deltaPosition.x, deltaPosition.y, deltaPosition.z)
 
     fun setRotation(yaw: Float, pitch: Float) {
         this.yaw = yaw
         this.pitch = pitch
     }
+
+    fun setRotation(rotation: Vector2f) = setRotation(rotation.x, rotation.y)
+
+    fun addRotation(deltaYaw: Float, deltaPitch: Float) = setRotation(yaw + deltaYaw, pitch + deltaPitch)
+
+    fun addRotation(deltaRotation: Vector2f) = addRotation(deltaRotation.x, deltaRotation.y)
 
     fun castRayForBlock(radius: Float, world: World, callback: (Block) -> Boolean): Pair<Location, Direction>? {
         val result = raycastBlock(radius) { blockPos ->
@@ -97,7 +107,7 @@ class Camera {
         return null
     }
 
-    private fun raycastBlock(radius: Float, callback: (Vector3i) -> Boolean): Pair<Vector3i, Direction>? {
+    private fun raycastBlock(radius: Float, callback: (Vector3ic) -> Boolean): Pair<Vector3ic, Direction>? {
         var distance = 0f
         val rayIncrement = 1 / 1024f
         val ray = Vector3f(forwardRay).normalize(rayIncrement)

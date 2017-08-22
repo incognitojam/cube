@@ -1,10 +1,12 @@
 package com.github.incognitojam.cube.game.world
 
+import com.github.incognitojam.cube.engine.maths.MathsUtils
 import com.github.incognitojam.cube.game.block.Block
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.world.chunk.Chunk
-import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector3i
+import org.joml.Vector3ic
 
 class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ: Int) {
 
@@ -44,11 +46,11 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
             value?.let { chunk?.setBlock(localPosition, it.id) }
         }
 
-    constructor(world: World, globalPosition: Vector3i) : this(world, globalPosition.x, globalPosition.y, globalPosition.z)
+    constructor(world: World, globalPosition: Vector3ic) : this(world, globalPosition.x(), globalPosition.y(), globalPosition.z())
 
-    constructor(world: World, globalPosition: Vector3f) : this(world, globalPosition.x.toInt(), globalPosition.y.toInt(), globalPosition.z.toInt())
+    constructor(world: World, globalPosition: Vector3fc) : this(world, MathsUtils.floatVectorToIntVector(globalPosition))
 
-    constructor(chunk: Chunk, localPosition: Vector3i) : this(chunk.world, localToGlobal(chunk, localPosition))
+    constructor(chunk: Chunk, localPosition: Vector3ic) : this(chunk.world, localToGlobal(chunk, localPosition))
 
     constructor(chunk: Chunk, localX: Int, localY: Int, localZ: Int) : this(chunk.world, localToGlobal(chunk, localX, localY, localZ))
 
@@ -99,52 +101,51 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
             return Math.floorMod(global, CHUNK_SIZE)
         }
 
-        fun globalToLocal(globalX: Int, globalY: Int, globalZ: Int): Vector3i {
+        fun globalToLocal(globalX: Int, globalY: Int, globalZ: Int): Vector3ic {
             return Vector3i(globalToLocal(globalX), globalToLocal(globalY), globalToLocal(globalZ))
         }
 
-        fun globalToLocal(globalPosition: Vector3i): Vector3i {
-            return globalToLocal(globalPosition.x, globalPosition.y, globalPosition.z)
+        fun globalToLocal(globalPosition: Vector3ic): Vector3ic {
+            return globalToLocal(globalPosition.x(), globalPosition.y(), globalPosition.z())
         }
 
         fun globalToChunk(global: Int): Int {
             return Math.floorDiv(global, CHUNK_SIZE)
         }
 
-        fun globalToChunk(globalX: Int, globalY: Int, globalZ: Int): Vector3i {
+        fun globalToChunk(globalX: Int, globalY: Int, globalZ: Int): Vector3ic {
             return Vector3i(globalToChunk(globalX), globalToChunk(globalY), globalToChunk(globalZ))
         }
 
-        fun globalToChunk(globalPosition: Vector3i): Vector3i {
-            return globalToChunk(globalPosition.x, globalPosition.y, globalPosition.z)
+        fun globalToChunk(globalPosition: Vector3ic): Vector3ic {
+            return globalToChunk(globalPosition.x(), globalPosition.y(), globalPosition.z())
         }
 
         fun localToGlobal(chunk: Int, local: Int): Int {
             return (chunk * CHUNK_SIZE) + local
         }
 
-        fun localToGlobal(chunk: Chunk, localX: Int, localY: Int, localZ: Int): Vector3i {
-            return Vector3i(localToGlobal(chunk.x, localX), localToGlobal(chunk.y, localY),
-                    localToGlobal(chunk.z, localZ))
+        fun localToGlobal(chunk: Chunk, localX: Int, localY: Int, localZ: Int): Vector3ic {
+            return Vector3i(localToGlobal(chunk.x, localX), localToGlobal(chunk.y, localY), localToGlobal(chunk.z, localZ)).toImmutable()
         }
 
-        fun localToGlobal(chunk: Chunk, local: Vector3i): Vector3i {
-            return localToGlobal(chunk, local.x, local.y, local.z)
+        fun localToGlobal(chunk: Chunk, local: Vector3ic): Vector3ic {
+            return localToGlobal(chunk, local.x(), local.y(), local.z())
         }
 
         fun chunkToGlobal(chunk: Int): Int {
             return chunk * CHUNK_SIZE
         }
 
-        fun chunkToGlobal(chunkX: Int, chunkY: Int, chunkZ: Int): Vector3i {
+        fun chunkToGlobal(chunkX: Int, chunkY: Int, chunkZ: Int): Vector3ic {
             return Vector3i(chunkToGlobal(chunkX), chunkToGlobal(chunkY), chunkToGlobal(chunkZ))
         }
 
-        fun chunkToGlobal(chunkPosition: Vector3i): Vector3i {
-            return chunkToGlobal(chunkPosition.x, chunkPosition.y, chunkPosition.z)
+        fun chunkToGlobal(chunkPosition: Vector3ic): Vector3ic {
+            return chunkToGlobal(chunkPosition.x(), chunkPosition.y(), chunkPosition.z())
         }
 
-        fun chunkToGlobal(chunk: Chunk): Vector3i {
+        fun chunkToGlobal(chunk: Chunk): Vector3ic {
             return chunkToGlobal(chunk.x, chunk.y, chunk.z)
         }
     }

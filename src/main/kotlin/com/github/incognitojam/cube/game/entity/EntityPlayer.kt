@@ -3,6 +3,9 @@ package com.github.incognitojam.cube.game.entity
 import com.github.incognitojam.cube.engine.MouseInput
 import com.github.incognitojam.cube.engine.Window
 import com.github.incognitojam.cube.engine.graphics.Camera
+import com.github.incognitojam.cube.engine.maths.cos
+import com.github.incognitojam.cube.engine.maths.sin
+import com.github.incognitojam.cube.engine.maths.toRadians
 import com.github.incognitojam.cube.game.GamCraft
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.inventory.ItemStack
@@ -23,7 +26,7 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
             jumpCooldown = if (value) 6 else 0
         }
 
-    val camera = Camera()
+    val camera = Camera(height * 0.75f)
     val targetBlock = Vector3i()
     var targetFace = Direction.UP
     var interactCooldown = 0
@@ -33,18 +36,7 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
             interactCooldown = if (value) 5 else 0
         }
 
-    override fun onInitialise() {
-        super.onInitialise()
-
-        inventory.addItem(ItemStack(Items.GRASS, 1))
-        inventory.addItem(ItemStack(Items.DIRT, 1))
-        inventory.addItem(ItemStack(Items.STONE, 1))
-        inventory.addItem(ItemStack(Items.GRAVEL, 1))
-        inventory.addItem(ItemStack(Items.LOG, 1))
-        inventory.addItem(ItemStack(Items.WATER, 1))
-    }
-
-    fun onInput(window: Window, mouseInput: MouseInput) {
+    fun input(window: Window, mouseInput: MouseInput) {
         val forward = window.isKeyPressed(GLFW_KEY_W)
         val left = window.isKeyPressed(GLFW_KEY_A)
         val backward = window.isKeyPressed(GLFW_KEY_S)
@@ -124,19 +116,30 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
         }
     }
 
-    override fun onUpdate(delta: Float) {
-        super.onUpdate(delta)
+    override fun update(delta: Float) {
+        super.update(delta)
 
         if (grounded && jumpCooldown > 0) jumpCooldown--
         if (interacting) interactCooldown--
     }
 
-    override fun onPositionChange() {
-        camera.setPosition(position.x, position.y + 1.5f, position.z)
+    override fun resolveMovement(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3f {
+        var modX = 0F
+        var modZ = 0F
+        if (deltaX != 0F) {
+            modX += (camera.yaw - 90f).toRadians().sin() * -1.0F * deltaX
+            modZ += (camera.yaw - 90f).toRadians().cos() * deltaX
+        }
+        if (deltaZ != 0F) {
+            modX += camera.yaw.toRadians().sin() * -1.0F * deltaZ
+            modZ += camera.yaw.toRadians().cos() * deltaZ
+        }
+
+        return Vector3f(modX, deltaY, modZ)
     }
 
-    override fun onRotationChange() {
-        camera.setRotation(rotation.x, rotation.y)
-    }
+    override fun onPositionChange(deltaX: Float, deltaY: Float, deltaZ: Float) = camera.addPosition(deltaX, deltaY, deltaZ)
+
+    override fun onRotationChange(deltaYaw: Float, deltaPitch: Float) = camera.addRotation(deltaYaw, deltaPitch)
 
 }

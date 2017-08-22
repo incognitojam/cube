@@ -20,7 +20,7 @@ class Window(val title: String, var width: Int, var height: Int, val vSync: Bool
     var captureMouse = true
     private var capturedMouse = false
 
-    fun onInitialise() {
+    fun initialise() {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set()

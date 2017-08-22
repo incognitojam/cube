@@ -6,6 +6,7 @@ import com.github.incognitojam.cube.game.gui.GuiItem
 import com.github.incognitojam.cube.game.world.chunk.Chunk
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.joml.Vector3fc
 
 object Transformation {
 
@@ -35,7 +36,7 @@ object Transformation {
         return orthographicMatrix
     }
 
-    fun getOrthographicProjectionModelMatrix(position: Vector3f, orthographicMatrix: Matrix4f): Matrix4f {
+    fun getOrthographicProjectionModelMatrix(position: Vector3fc, orthographicMatrix: Matrix4f): Matrix4f {
         return orthographicMatrix.clone().mul(Matrix4f().translation(position))
     }
 
@@ -45,18 +46,18 @@ object Transformation {
 
     fun getViewMatrix(camera: Camera, viewMatrix: Matrix4f): Matrix4f {
         viewMatrix.identity()
-                .rotate(camera.rotationRadians.x, Vector3f(1f, 0f, 0f))
-                .rotate(camera.rotationRadians.y, Vector3f(0f, 1f, 0f))
-                .rotate(camera.rotationRadians.z, Vector3f(0f, 0f, 1f))
+                .rotate(camera.rotationRadians.x(), Vector3f(1f, 0f, 0f))
+                .rotate(camera.rotationRadians.y(), Vector3f(0f, 1f, 0f))
+                .rotate(camera.rotationRadians.z(), Vector3f(0f, 0f, 1f))
                 .translate(-camera.position.x, -camera.position.y, -camera.position.z)
         return viewMatrix
     }
 
-    fun buildModelMatrix(position: Vector3f, rotation: Vector3f, rotationOffset: Vector3f): Matrix4f {
+    fun buildModelMatrix(position: Vector3fc, rotation: Vector3fc, rotationOffset: Vector3f): Matrix4f {
         return modelMatrix.translation(position)
-                .rotate(rotation.x, Vector3f(1f, 0f, 0f))
-                .rotate(rotation.y, Vector3f(0f, 1f, 0f))
-                .rotate(rotation.z, Vector3f(0f, 0f, 1f))
+                .rotate(rotation.x(), Vector3f(1f, 0f, 0f))
+                .rotate(rotation.y(), Vector3f(0f, 1f, 0f))
+                .rotate(rotation.z(), Vector3f(0f, 0f, 1f))
                 .translate(rotationOffset.negate())
     }
 
