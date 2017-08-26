@@ -1,29 +1,30 @@
 package com.github.incognitojam.cube.game.gui
 
 import com.github.incognitojam.cube.engine.graphics.FontTexture
-import com.github.incognitojam.cube.engine.graphics.Mesh
+import com.github.incognitojam.cube.engine.graphics.mesh.TexturedMesh
 
 class TextItem(_text: String, private val fontTexture: FontTexture): GuiItem() {
 
-    override var width = 0f
-    override var height = 0f
+    override var width = 0
+    override var height = 0
 
     var text: String = _text
         set(value) {
             field = value
-            mesh?.deleteBuffers()
+            mesh?.delete()
             mesh = buildMesh()
+            mesh?.initialise()
         }
 
-    private fun buildMesh(): Mesh {
+    private fun buildMesh(): TexturedMesh {
         val positions = ArrayList<Float>()
         val textureCoordinates = ArrayList<Float>()
         val indices = ArrayList<Int>()
 
         val characters = text.toCharArray()
 
-        val widths = ArrayList<Float>()
-        var tempWidth = 0f
+        val widths = ArrayList<Int>()
+        var tempWidth = 0
 
         var startX = 0f
         var startY = 0f
@@ -33,7 +34,7 @@ class TextItem(_text: String, private val fontTexture: FontTexture): GuiItem() {
                 startY += fontTexture.height
                 startX = 0f
                 widths += tempWidth
-                tempWidth = 0f
+                tempWidth = 0
                 continue
             }
             val charInfo = fontTexture.getCharInfo(char) ?: continue
@@ -77,19 +78,19 @@ class TextItem(_text: String, private val fontTexture: FontTexture): GuiItem() {
             indices.add(index * VERTICES_PER_QUAD + 2)
 
             startX += charInfo.width.toFloat()
-            tempWidth += charInfo.width.toFloat()
+            tempWidth += charInfo.width
             index++
         }
 
         widths += tempWidth
-        width = widths.max() ?: 0f
-        height = widths.size * fontTexture.height.toFloat()
+        width = widths.max() ?: 0
+        height = widths.size * fontTexture.height
 
         val positionsArray = positions.toFloatArray()
         val textureCoordinatesArray = textureCoordinates.toFloatArray()
         val indicesArray = indices.toIntArray()
 
-        return Mesh(positionsArray, textureCoordinatesArray, indicesArray, fontTexture.texture)
+        return TexturedMesh(positionsArray, textureCoordinatesArray, indicesArray, fontTexture.texture)
     }
 
     companion object {

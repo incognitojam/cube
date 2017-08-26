@@ -4,7 +4,7 @@ in vec2 outTexCoord;
 in vec3 mvPos;
 out vec4 fragColor;
 
-uniform sampler2D texture_sampler;
+uniform sampler2D textureSampler;
 uniform vec4 colour;
 uniform int hasTexture;
 
@@ -12,7 +12,7 @@ void main()
 {
     if ( hasTexture == 1 )
     {
-        fragColor = colour * texture(texture_sampler, outTexCoord);
+        fragColor = colour * texture(textureSampler, outTexCoord);
     }
     else
     {

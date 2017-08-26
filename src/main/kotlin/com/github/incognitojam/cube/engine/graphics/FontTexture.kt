@@ -58,7 +58,7 @@ class FontTexture(private val font: Font, private val charset: Charset) {
             inputStream = ByteArrayInputStream(out.toByteArray())
         }
 
-        inputStream?.let { texture = Texture(it) }
+        inputStream?.let { texture = Texture.loadTexture(it) }
     }
 
     companion object {
@@ -67,11 +67,10 @@ class FontTexture(private val font: Font, private val charset: Charset) {
         private fun getAllAvailableChars(charset: Charset): String {
             val charsetEncoder = charset.newEncoder()
             val result = StringBuilder()
-            (0..Character.MAX_VALUE.toInt())
-                    .map { it.toChar() }
+            // Iterate all chars in range and add encodable chars to string
+            (Character.MIN_VALUE..Character.MAX_VALUE)
                     .filter { charsetEncoder.canEncode(it) }
                     .forEach { result.append(it) }
-            println("Found ${result.length} characters for charset ${charset.displayName()}")
             return result.toString()
         }
     }

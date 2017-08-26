@@ -1,39 +1,38 @@
 package com.github.incognitojam.cube.game.world.chunk
 
-import com.github.incognitojam.cube.engine.graphics.ChunkMesh
-import com.github.incognitojam.cube.engine.graphics.ChunkMeshBuilder
-import com.github.incognitojam.cube.engine.graphics.WaterMesh
-import com.github.incognitojam.cube.engine.graphics.WaterMeshBuilder
+import com.github.incognitojam.cube.engine.graphics.mesh.BlockMesh
+import com.github.incognitojam.cube.engine.graphics.mesh.BlockMeshBuilder
+import com.github.incognitojam.cube.engine.graphics.mesh.ChunkMesh
+import com.github.incognitojam.cube.engine.graphics.mesh.ChunkMeshBuilder
 import com.github.incognitojam.cube.game.block.Block
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.world.Direction
 import com.github.incognitojam.cube.game.world.Location
 import com.github.incognitojam.cube.game.world.World
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector3i
+import org.joml.Vector3ic
 
-class Chunk(val world: World, val chunkPosition: Vector3i) {
+class Chunk(val world: World, val chunkPosition: Vector3ic) {
 
     val x: Int
-        get() = chunkPosition.x
+        get() = chunkPosition.x()
     val y: Int
-        get() = chunkPosition.y
+        get() = chunkPosition.y()
     val z: Int
-        get() = chunkPosition.z
+        get() = chunkPosition.z()
 
-    val worldPos = Vector3f(chunkPosition).mul(Location.CHUNK_SIZE.toFloat())
+    val worldPos: Vector3ic = Vector3i(chunkPosition).mul(Location.CHUNK_SIZE)
+    val renderPos: Vector3fc = Vector3f(worldPos)
 
-    private var empty = false
     private val blocks = Array(Location.CHUNK_SIZE_CUBED) { 0.toByte() }
+    var empty = false
 
     private var blockMeshDirty = true
     private var waterMeshDirty = true
     var blockMesh: ChunkMesh? = null
-    var waterMesh: WaterMesh? = null
-
-    fun initialise() {
-        world.generator.generateChunk(this)
-    }
+    var waterMesh: BlockMesh? = null
 
     fun update(delta: Float) {
     }
@@ -47,7 +46,7 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
         empty = true
         for (index in Location.CHUNK_VOLUME) {
             val block = generator.invoke(index)
-            if (empty && block.visible) empty = false
+            if (block.visible) empty = false
             blocks[index] = block.id
         }
 
@@ -72,7 +71,7 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
         if (!blockMeshDirty && !waterMeshDirty) return
 
         val blockMeshBuilder = ChunkMeshBuilder()
-        val waterMeshBuilder = WaterMeshBuilder()
+        val waterMeshBuilder = BlockMeshBuilder()
 
         for (blockIndex in 0 until Location.CHUNK_SIZE_CUBED) {
             val blockId = getBlockId(blockIndex)!!
@@ -87,55 +86,31 @@ class Chunk(val world: World, val chunkPosition: Vector3i) {
                 if (block == Blocks.WATER) {
                     val top = location.getAdjacent(Direction.UP).block
                     if (top != Blocks.WATER && (top == null || !top.opaque)) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.UP)
-                        waterMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.WATER_TOP_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_TOP)
+                        waterMeshBuilder.addFace(block, Direction.UP)
                     }
                 } else {
-                    var vegetationValue = -999F
+                    Direction.values()
+                            .filterNot { location.getAdjacent(it).block?.opaque == true }
+                            .forEach {
+                                val textureCoordinates = block.getTextureCoordinates(it)
+                                val vertices = BlockMeshBuilder.getVertices(it)
+                                val ambientLight = BlockMeshBuilder.getAmbientLight(it)
 
-                    val left = location.getAdjacent(Direction.LEFT).block?.opaque ?: false
-                    val right = location.getAdjacent(Direction.RIGHT).block?.opaque ?: false
-                    val bottom = location.getAdjacent(Direction.DOWN).block?.opaque ?: false
-                    val top = location.getAdjacent(Direction.UP).block?.opaque ?: false
-                    val back = location.getAdjacent(Direction.BACK).block?.opaque ?: false
-                    val front = location.getAdjacent(Direction.FRONT).block?.opaque ?: false
+                                val vegetationValue = if (it == Direction.UP && block == Blocks.GRASS) {
+//                                    world.getTileEntity(Location.localToGlobal(this, localX, localY, localZ)) as TileEntityGrass
+                                    1f
+                                } else {
+                                    -1f
+                                }
 
-                    if (!left) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.LEFT)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.LEFT_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_X, vegetationValue)
-                    }
-
-                    if (!right) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.RIGHT)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.RIGHT_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_X, vegetationValue)
-                    }
-
-                    if (!bottom) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.DOWN)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.BOTTOM_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_BOTTOM, vegetationValue)
-                    }
-
-                    if (!back) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.BACK)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.BACK_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_Z, vegetationValue)
-                    }
-
-                    if (!front) {
-                        val textureCoordinates = block.getTextureCoordinates(Direction.FRONT)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.FRONT_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_Z, vegetationValue)
-                    }
-
-                    if (!top) {
-                        if (block == Blocks.GRASS) vegetationValue = 1.0f
-
-                        val textureCoordinates = block.getTextureCoordinates(Direction.UP)
-                        blockMeshBuilder.addFace(localX, localY, localZ, ChunkMeshBuilder.TOP_VERTICES, textureCoordinates, ChunkMeshBuilder.LIGHT_TOP, vegetationValue)
-                    }
+                                blockMeshBuilder.addFace(localX, localY, localZ, vertices, textureCoordinates,
+                                        ambientLight, vegetationValue)
+                            }
                 }
             }
         }
-        blockMesh = blockMeshBuilder.build(Blocks.getTextureMap())
-        waterMesh = waterMeshBuilder.build(Blocks.getTextureMap())
+        blockMesh = blockMeshBuilder.build()
+        waterMesh = waterMeshBuilder.build()
 
         blockMeshDirty = false
         waterMeshDirty = false

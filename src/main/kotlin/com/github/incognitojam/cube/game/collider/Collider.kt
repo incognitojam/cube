@@ -1,13 +1,16 @@
 package com.github.incognitojam.cube.game.collider
 
-import com.github.incognitojam.cube.engine.graphics.BasicMesh
+import com.github.incognitojam.cube.engine.graphics.mesh.ColouredMesh
+import com.github.incognitojam.cube.engine.maths.floorInt
 import com.github.incognitojam.cube.game.entity.Entity
 import com.github.incognitojam.cube.game.world.Location
 import com.github.incognitojam.cube.game.world.World
+import org.joml.Math
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector3i
 
-class Collider(width: Float, private val height: Float, position: Vector3f? = null) {
+class Collider(private val width: Float, private val height: Float, position: Vector3fc? = null) {
 
     private val halfWidth = width / 2F
 
@@ -18,7 +21,7 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
     var minBlock = Vector3i()
     var maxBlock = Vector3i()
 
-    lateinit var mesh: BasicMesh
+    lateinit var mesh: ColouredMesh
 
     init {
         position?.let { updateCollider(it) }
@@ -64,20 +67,21 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
                 6, 7, 3
         )
 
-        mesh = BasicMesh(positions, colours, indices)
+        mesh = ColouredMesh(positions, colours, indices)
+        mesh.initialise()
     }
 
     fun delete() = mesh.delete(true)
 
-    fun doesCollide(entitySelf: Entity, position: Vector3f, world: World): Boolean {
+    fun doesCollide(entitySelf: Entity, position: Vector3fc, world: World): Boolean {
         return doesCollideWorld(position, world) || doesCollideEntity(entitySelf, position, world) != null
     }
 
-    fun doesCollideWorld(position: Vector3f, world: World): Boolean {
-        return checkBlockCollision(position) { blockPosition -> Location(world, blockPosition).block?.solid ?: false }
+    fun doesCollideWorld(position: Vector3fc, world: World): Boolean {
+        return checkBlockCollision(position) { blockPosition -> Location(world, blockPosition).block?.solid == true }
     }
 
-    fun doesCollideEntity(entitySelf: Entity, position: Vector3f, world: World): Entity? {
+    fun doesCollideEntity(entitySelf: Entity, position: Vector3fc, world: World): Entity? {
         updateCollider(position)
         return world.getEntities().filter { it != entitySelf }.firstOrNull { entity ->
             entity.collider.doesColliderIntersect(this)
@@ -95,7 +99,7 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
         return true
     }
 
-    fun getIntersectLocation(other: Collider): Vector3f? {
+    fun getIntersectLocation(other: Collider): Vector3fc? {
         if (!doesColliderIntersect(other)) return null
 
         val startX = Math.max(other.minPoint.x, minPoint.x)
@@ -109,7 +113,7 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
         return Vector3f((startX - endX) / 2f, (startY - endY) / 2f, (startZ - endZ) / 2f)
     }
 
-    private fun checkBlockCollision(position: Vector3f, callback: (Vector3i) -> Boolean): Boolean {
+    private fun checkBlockCollision(position: Vector3fc, callback: (Vector3i) -> Boolean): Boolean {
         updateCollider(position)
 
         for (x in minBlock.x..maxBlock.x) {
@@ -128,21 +132,12 @@ class Collider(width: Float, private val height: Float, position: Vector3f? = nu
         return false
     }
 
-    private fun updateCollider(position: Vector3f) {
-        minPoint = Vector3f(position.x - halfWidth, position.y, position.z - halfWidth)
-        maxPoint = Vector3f(position.x + halfWidth, position.y + height, position.z + halfWidth)
+    private fun updateCollider(position: Vector3fc) {
+        minPoint = Vector3f(position).sub(halfWidth, 0f, halfWidth)
+        maxPoint = Vector3f(position).add(halfWidth, 0f, halfWidth)
 
-        minBlock = Vector3i(
-                Math.floor(minPoint.x.toDouble()).toInt(),
-                Math.floor(minPoint.y.toDouble()).toInt(),
-                Math.floor(minPoint.z.toDouble()).toInt()
-        )
-
-        maxBlock = Vector3i(
-                Math.floor(maxPoint.x.toDouble()).toInt(),
-                Math.floor(maxPoint.y.toDouble()).toInt(),
-                Math.floor(maxPoint.z.toDouble()).toInt()
-        )
+        minBlock = Vector3i(minPoint.x.floorInt(), minPoint.y.floorInt(), minPoint.z.floorInt())
+        maxBlock = Vector3i(maxPoint.x.floorInt(), maxPoint.y.floorInt(), maxPoint.z.floorInt())
     }
 
 }

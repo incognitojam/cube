@@ -7,11 +7,11 @@ import com.github.incognitojam.cube.game.world.Direction.DOWN
 import com.github.incognitojam.cube.game.world.Location
 import com.github.incognitojam.cube.game.world.World
 import org.joml.*
-import java.util.*
 
-open class EntityLiving(world: World, width: Float, height: Float, mass: Float, var health: Int) : Entity(world, width, height, mass) {
+abstract class EntityLiving(world: World, width: Float, height: Float, mass: Float, private var health: Int) :
+        Entity(world, width, height, mass) {
 
-    val living: Boolean
+    private val living: Boolean
         get() = health > 0
 
     override var dead: Boolean
@@ -22,19 +22,19 @@ open class EntityLiving(world: World, width: Float, height: Float, mass: Float, 
 
 }
 
-open class EntityHungry(world: World, width: Float, height: Float, mass: Float, health: Int, var hunger: Int) : EntityLiving(world, width,
-        height, mass, health) {
+abstract class EntityHungry(world: World, width: Float, height: Float, mass: Float, health: Int, private var hunger: Int) :
+        EntityLiving(world, width, height, mass, health) {
 
     val starving: Boolean
         get() = hunger == 0
 
 }
 
-open class Entity(val world: World, val width: Float, val height: Float, val mass: Float) {
+abstract class Entity(val world: World, val width: Float, val height: Float, private val mass: Float) {
 
-    private var x = 0f
-    private var y = 0f
-    private var z = 0f
+    protected var x = 0f
+    protected var y = 0f
+    protected var z = 0f
 
     val position: Vector3fc
         get() = Vector3f(x, y, z)
@@ -52,6 +52,7 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
         get() = Vector2f(yaw, pitch).toImmutable()
     val rotationRadians: Vector3fc
         get() = Vector3f(yaw.toRadians(), pitch.toRadians(), 0f)
+    val rotationOffset: Vector3fc = Vector3f(width / 2f, 0f, width / 2f).negate()
 
     val blockPosition: Vector3ic
         get() = Vector3i(x.floorInt(), y.floorInt(), z.floorInt())
@@ -61,16 +62,7 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
         get() = location.getAdjacent(DOWN)
     val collider = Collider(width, height)
 
-    private val forces = ArrayList<Pair<Vector3f, Int>>()
     val velocity = Vector3f()
-    val acceleration: Vector3fc
-        get() = Vector3f(resultantForce).div(mass)
-    val resultantForce = Vector3f()
-
-    val momentum: Vector3f
-        get() = velocity.clone().mul(mass)
-    val kineticEnergy: Float
-        get() = .5f * mass * velocity.lengthSquared()
 
     open var dead = false
     var grounded = false
@@ -79,64 +71,24 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
         collider.initialise()
     }
 
-    private fun getRequiredForce(entity: Entity, targetVelocity: Vector3f, delta: Float): Vector3f {
-        val dVelocity = targetVelocity.clone().sub(entity.velocity)
-        val acceleration = dVelocity.div(delta)
-        return acceleration.mul(mass)
-    }
-
     open fun update(delta: Float) {
         // Check if a collision would be made if falling to determine if the entity is on the ground
         grounded = collider.doesCollide(this, Vector3f(position).sub(0f, 1 / 16f, 0f), world)
 
-        // Iterate all forces to calculate acceleration
-        resultantForce.zero()
-        val newForces = ArrayList<Pair<Vector3f, Int>>()
-        forces.forEach { (force, duration) ->
-            resultantForce.add(force)
-            if (duration > 1) newForces.add(Pair(force, duration - 1))
-        }
-        forces.clear()
-        forces.addAll(newForces)
-
-        resultantForce.y -= World.G * mass
-
-        // Calculate resistive force (friction from ground or air resistance above ground)
-        val resistance: Float = if (grounded) {
-            val frictionCoefficient = 5F
-            val normalReaction = Math.max(0f, -resultantForce.y) // -weight, unless not grounded or jumping or something
-            normalReaction * frictionCoefficient
+        if (grounded) {
+            if (velocity.y < 0f) velocity.y = 0f
+            velocity.x *= .9f
+            velocity.z *= .9f
         } else {
-            val dragCoefficient = .01F
-            val area = width * height
-
-            velocity.lengthSquared() * dragCoefficient * area
+            velocity.y -= 9.81f * delta
+            velocity.mul(.99f)
         }
-
-        // Add resistive forces to axes where there is a magnitude of velocity
-        if (velocity.x != 0F) resultantForce.x += Math.min(velocity.x.abs() * mass, resistance).copySign(-velocity.x)
-        if (velocity.y != 0F) resultantForce.y += Math.min(velocity.y.abs() * mass, resistance).copySign(-velocity.y)
-        if (velocity.z != 0F) resultantForce.z += Math.min(velocity.z.abs() * mass, resistance).copySign(-velocity.z)
-
-        // Apply the current acceleration to velocity
-        velocity.add(Vector3f(acceleration).mul(delta))
-
-        // If the velocity is too small set it to zero and return
-        if (velocity.lengthSquared() < 1E-4) {
-            velocity.zero()
-            return
-        }
-
-        // If the player is on the ground cancel any negative vertical velocity
-        if (grounded && velocity.y < 0f) velocity.y = 0f
 
         // Attempt to move by the current velocity
-        val oldX = x
-        val oldY = y
-        val oldZ = z
-        if (move(velocity.x * delta, velocity.y * delta, velocity.z * delta)) {
+        val deltaPosition = move(velocity.x * delta, velocity.y * delta, velocity.z * delta)
+        if (deltaPosition != null) {
             // If the move was successful notify the entity of the position change
-            onPositionChange(x - oldX, y - oldY, z - oldZ)
+            onPositionChange(deltaPosition.x(), deltaPosition.y(), deltaPosition.z())
         }
     }
 
@@ -144,24 +96,27 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
 
     open fun delete() = collider.delete()
 
-    private fun move(deltaX: Float, deltaY: Float, deltaZ: Float): Boolean {
-        var positionChanged = false
+    private fun move(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3fc? {
+        val deltaPosition = Vector3f()
 
-        if (deltaX != 0F) {
-            positionChanged = _move(Vector3f(deltaX, 0f, 0f))
+        if (deltaX != 0f) {
+            val deltaPos = Vector3f(deltaX, 0f, 0f)
+            if (_move(deltaPos)) deltaPosition.add(deltaPos)
         }
-        if (deltaY != 0F) {
-            positionChanged = _move(Vector3f(0f, deltaY, 0f)) || positionChanged
+        if (deltaY != 0f) {
+            val deltaPos = Vector3f(0f, deltaY, 0f)
+            if (_move(deltaPos)) deltaPosition.add(deltaPos)
         }
-        if (deltaZ != 0F) {
-            positionChanged = _move(Vector3f(0f, 0f, deltaZ)) || positionChanged
+        if (deltaZ != 0f) {
+            val deltaPos = Vector3f(0f, 0f, deltaZ)
+            if (_move(deltaPos)) deltaPosition.add(deltaPos)
         }
 
-        return positionChanged
+        return deltaPosition
     }
 
-    private fun _move(delta: Vector3f): Boolean {
-        var temporaryDelta = delta.clone()
+    private fun _move(delta: Vector3fc): Boolean {
+        val temporaryDelta = Vector3f(delta)
         var collides = true
         var minimumLength: Boolean
         while (true) {
@@ -170,19 +125,20 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
             val newPosition = Vector3f(position).add(temporaryDelta)
             collides = collider.doesCollide(this, newPosition, world)
             if (!collides) break
-            temporaryDelta /= 2F
+            temporaryDelta.div(2f)
         }
 
         // TODO (improvement) Check that movement does not pass through obstructions too
 
-        if (!collides) {
+        return if (!collides) {
             x += temporaryDelta.x
             y += temporaryDelta.y
             z += temporaryDelta.z
+            true
         } else {
             velocity.sub(delta)
+            false
         }
-        return !collides
     }
 
     fun setPositionWithoutColliding(x: Float, y: Float, z: Float) {
@@ -196,15 +152,15 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
         onPositionChange(x - oldX, y - oldY, z - oldZ)
     }
 
-    open fun resolveMovement(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3f {
-        var modX = 0F
-        var modZ = 0F
-        if (deltaX != 0F) {
-            modX += (yaw - 90f).toRadians().sin() * -1.0F * deltaX
+    open fun resolveMovement(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3fc {
+        var modX = 0f
+        var modZ = 0f
+        if (deltaX != 0f) {
+            modX += (yaw - 90f).toRadians().sin() * -1f * deltaX
             modZ += (yaw - 90f).toRadians().cos() * deltaX
         }
-        if (deltaZ != 0F) {
-            modX += yaw.toRadians().sin() * -1.0F * deltaZ
+        if (deltaZ != 0f) {
+            modX += yaw.toRadians().sin() * -1f * deltaZ
             modZ += yaw.toRadians().cos() * deltaZ
         }
 
@@ -222,20 +178,14 @@ open class Entity(val world: World, val width: Float, val height: Float, val mas
         onRotationChange(yaw - oldYaw, pitch - oldPitch)
     }
 
-    fun setRotation(rotation: Vector2f) = setRotation(rotation.x, rotation.y)
+    fun setRotation(rotation: Vector2fc) = setRotation(rotation.x(), rotation.y())
 
     fun addRotation(deltaX: Float, deltaY: Float) = setRotation(yaw + deltaX, pitch + deltaY)
 
     open fun onRotationChange(deltaYaw: Float, deltaPitch: Float) = Unit
 
-    fun addForce(force: Vector3f, duration: Int = 1) {
-        forces.add(Pair(force, duration))
-    }
-
-    fun addForce(forceX: Float, forceY: Float, forceZ: Float, duration: Int = 1) = addForce(Vector3f(forceX, forceY, forceZ), duration)
-
     override fun toString(): String {
-        return "Entity(world=$world, width=$width, height=$height, mass=$mass, position=$position, rotation=$rotation, velocity=$velocity, acceleration=$acceleration)"
+        return "Entity(world=$world, width=$width, height=$height, mass=$mass, position=$position, rotation=$rotation, velocity=$velocity)"
     }
 
 }

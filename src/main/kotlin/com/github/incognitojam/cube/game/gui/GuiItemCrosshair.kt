@@ -1,12 +1,12 @@
 package com.github.incognitojam.cube.game.gui
 
-import com.github.incognitojam.cube.engine.graphics.ChunkMeshBuilder
-import com.github.incognitojam.cube.engine.graphics.Mesh
 import com.github.incognitojam.cube.engine.graphics.TextureMap
+import com.github.incognitojam.cube.engine.graphics.mesh.BlockMeshBuilder
+import com.github.incognitojam.cube.engine.graphics.mesh.TexturedMesh
 
 class GuiItemCrosshair(private val textureMap: TextureMap) : GuiItem() {
 
-    override var width = 32F
+    override var width = 32
     override var height = width
 
     override fun initialise() {
@@ -19,7 +19,8 @@ class GuiItemCrosshair(private val textureMap: TextureMap) : GuiItem() {
 
         val textureCoordinates = textureMap.getTextureCoordinates(0)
 
-        mesh = Mesh(positions, textureCoordinates, ChunkMeshBuilder.INDICES_DELTA, textureMap)
+        mesh = TexturedMesh(positions, textureCoordinates, BlockMeshBuilder.INDICES_DELTA, textureMap)
+        mesh?.initialise()
     }
 
 }

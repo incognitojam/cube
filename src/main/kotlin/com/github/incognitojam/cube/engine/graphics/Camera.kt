@@ -22,16 +22,18 @@ class Camera(val eyeHeight: Float) {
     var z: Float = 0f
         private set
 
-    val position: Vector3f
-        get() = Vector3f(x, y + eyeHeight, z)
+    val position: Vector3fc
+        get() = Vector3f(x, y, z)
+    val thirdPersonPosition: Vector3fc
+        get() = Vector3f(position).add(Vector3f(forwardRay).negate().mul(5f))
 
     var yaw = 0f
         private set(value) {
-            field = (value % 360f + 360f) % 360f
+            field = MathsUtils.positiveModulo(value, 360f)
         }
     var pitch = 0f
         private set(value) {
-            field = (value % 360f + 360f) % 360f
+            field = MathsUtils.positiveModulo(value, 360f)
         }
 
     val rotation: Vector2fc
@@ -39,11 +41,15 @@ class Camera(val eyeHeight: Float) {
     val rotationRadians: Vector3fc
         get() = Vector3f(yaw.toRadians(), pitch.toRadians(), 0f).toImmutable()
 
-    val forwardRay: Vector3f
-        get() = viewMatrix.positiveZ(tmp).negate()
+    val forwardRay: Vector3fc
+        get() = viewMatrix.positiveZ(tmp).negate().normalize()
 
     fun getViewMatrix(): Matrix4f {
         return Transformation.getViewMatrix(this, viewMatrix)
+    }
+
+    fun getThirdPersonViewMatrix(): Matrix4f {
+        return Transformation.getThirdPersonViewMatrix(this, viewMatrix)
     }
 
     fun setPosition(x: Float, y: Float, z: Float) {
@@ -52,33 +58,33 @@ class Camera(val eyeHeight: Float) {
         this.z = z
     }
 
-    fun setPosition(position: Vector3f) = setPosition(position.x, position.y, position.z)
+    fun setPosition(position: Vector3fc) = setPosition(position.x(), position.y(), position.z())
 
     fun addPosition(deltaX: Float, deltaY: Float, deltaZ: Float) = setPosition(x + deltaX, y + deltaY, z + deltaZ)
 
-    fun addPosition(deltaPosition: Vector3f) = setPosition(deltaPosition.x, deltaPosition.y, deltaPosition.z)
+    fun addPosition(deltaPosition: Vector3fc) = addPosition(deltaPosition.x(), deltaPosition.y(), deltaPosition.z())
 
     fun setRotation(yaw: Float, pitch: Float) {
         this.yaw = yaw
         this.pitch = pitch
     }
 
-    fun setRotation(rotation: Vector2f) = setRotation(rotation.x, rotation.y)
+    fun setRotation(rotation: Vector3fc) = setRotation(rotation.x(), rotation.y())
 
     fun addRotation(deltaYaw: Float, deltaPitch: Float) = setRotation(yaw + deltaYaw, pitch + deltaPitch)
 
-    fun addRotation(deltaRotation: Vector2f) = addRotation(deltaRotation.x, deltaRotation.y)
+    fun addRotation(deltaRotation: Vector3fc) = addRotation(deltaRotation.x(), deltaRotation.y())
 
     fun castRayForBlock(radius: Float, world: World, callback: (Block) -> Boolean): Pair<Location, Direction>? {
         val result = raycastBlock(radius) { blockPos ->
-            Location(world, blockPos).block?.let { callback.invoke(it) } ?: false
+            Location(world, blockPos).block?.let { callback.invoke(it) } == true
         } ?: return null
         return Pair(Location(world, result.first), result.second.getOpposite())
     }
 
     inline fun <reified T : Entity> castRayForEntity(radius: Float, world: World, callback: (T) -> Boolean): T? {
-        val rayIncrement = 1 / 16f
-        val ray = Vector3f(forwardRay).normalize(rayIncrement)
+        val rayIncrement = 1f / 16f
+        val ray = Vector3f(forwardRay).mul(rayIncrement)
         val fractionalRay = Vector3f(ray).apply {
             x = 1f / x
             y = 1f / y
@@ -109,7 +115,7 @@ class Camera(val eyeHeight: Float) {
 
     private fun raycastBlock(radius: Float, callback: (Vector3ic) -> Boolean): Pair<Vector3ic, Direction>? {
         var distance = 0f
-        val rayIncrement = 1 / 1024f
+        val rayIncrement = 1f / 1024f
         val ray = Vector3f(forwardRay).normalize(rayIncrement)
         var direction = Direction.UP
 

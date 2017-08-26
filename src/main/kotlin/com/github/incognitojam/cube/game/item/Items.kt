@@ -26,7 +26,7 @@ object Items {
         WATER = registerItem(ItemWater(6))
         PUMPKIN = registerItem(ItemPumpkin(7))
 
-        textureMap = TextureMap("textures/items/items.png", 16)
+        textureMap = TextureMap.loadTextureMap("textures/items/items.png", 16)
     }
 
     fun delete() {

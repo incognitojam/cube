@@ -14,9 +14,9 @@ import org.lwjgl.glfw.GLFW.GLFW_KEY_C
 import org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
 import org.lwjgl.opengl.GL11.*
 
-class GamCraft : IGameLogic {
+class ProjectCube : IGameLogic {
 
-    private val world = World("World", 0L)
+    private lateinit var world: World
     private lateinit var hud: GuiHud
     private lateinit var guiRenderer: GuiRenderer
     private lateinit var player: EntityPlayer
@@ -25,17 +25,18 @@ class GamCraft : IGameLogic {
         Blocks.initialise()
         Items.initialise()
 
-        player = EntityPlayer(world, "IncognitoJam")
-        world.initialise(player)
+        world = World("World", 4)
+        world.initialise()
+        player = world.player
+        player.name = "Player"
 
         guiRenderer = GuiRenderer()
         guiRenderer.initialise()
         hud = GuiHud(world)
         hud.initialise()
 
-        val maximumHeight = world.getMaximumBlock(0, 0)!!.globalY + 30f
-        player.setPositionWithoutColliding(.5F, maximumHeight, .5F)
-        player.setRotation(0F, 0F)
+        player.setPositionWithoutColliding(8.5f, 512f, 8.5f)
+        player.setRotation(0f, 0f)
     }
 
     override fun status(frames: Int, updates: Int) {
@@ -63,14 +64,14 @@ class GamCraft : IGameLogic {
 
         world.update(delta)
 
-        val debugText = """Position: ${MathsUtils.format(player.position, 2)} (${MathsUtils.format(player.blockPosition)})
-Rotation: ${MathsUtils.format(player.rotation, 2)}
-Camera Rotation: ${MathsUtils.format(player.camera.rotation, 2)}
-Velocity: ${MathsUtils.format(player.velocity, 2)}m/s
-Acceleration: ${MathsUtils.format(player.acceleration, 2)}m/s/s
-Grounded: ${player.grounded}, Jumping: ${player.jumping}, Jump Cooldown: ${player.jumpCooldown} ticks
-Stood above ${player.groundLocation.block} at ${MathsUtils.format(player.groundLocation.globalPosition)}
-"""
+        val debugText = """
+            |Position: ${MathsUtils.format(player.position)}
+            |Rotation: ${MathsUtils.format(player.rotation)}
+            |Camera Rotation: ${MathsUtils.format(player.camera.rotation)}
+            |Velocity: ${MathsUtils.format(player.velocity)}
+            |Grounded: ${player.grounded}, Jumping: ${player.jumping}, Jump Cooldown: ${player.jumpCooldown} ticks
+            |Stood above ${player.groundLocation.block} at ${MathsUtils.format(player.groundLocation.globalPosition)}
+            """.trimMargin("|")
 
         hud.setDebugText(debugText)
         hud.update()
@@ -108,15 +109,12 @@ Stood above ${player.groundLocation.block} at ${MathsUtils.format(player.groundL
     }
 
     companion object {
-        const val MOUSE_SENSITIVITY = 0.2F
+        const val MOUSE_SENSITIVITY = 0.2f
 
-        const val PLAYER_CROUCH_FORCE = 100f
-        const val PLAYER_WALK_FORCE = 400f
-        const val PLAYER_RUN_FORCE = 750f
-        const val PLAYER_JUMP_FORCE = 4500f
-
-        const val ENTITY_ITEM_JUMP_FORCE = 25f
-        const val ENTITY_COLLISION_FORCE = 5f
+        const val PLAYER_CROUCH_SPEED = 0.5f
+        const val PLAYER_WALK_SPEED = 1.0f
+        const val PLAYER_RUN_SPEED = 4.0f
+        const val PLAYER_JUMP_SPEED = 5.0f
     }
 
 }

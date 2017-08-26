@@ -1,17 +1,18 @@
-package com.github.incognitojam.cube.engine.graphics
+package com.github.incognitojam.cube.engine.graphics.mesh
 
-class WaterMeshBuilder {
+class ChunkMeshBuilder {
 
     private var vertices = ArrayList<Float>()
     private var textureCoordinates = ArrayList<Float>()
     private var ambientLights = ArrayList<Float>()
+    private var vegetationColours = ArrayList<Float>()
     private var indices = ArrayList<Int>()
 
     private var vertexCount = 0
     private var indexCount = 0
     private var faceCount = 0
 
-    fun addFace(x: Int, y: Int, z: Int, faceVertices: FloatArray, faceTextureCoordinates: FloatArray, ambientLight: Float) {
+    fun addFace(x: Int, y: Int, z: Int, faceVertices: FloatArray, faceTextureCoordinates: FloatArray, ambientLight: Float, vegetationValue: Float) {
         // Add vertex coordinates (offset by position vector)
         val newVertices = faceVertices.mapIndexed { index, value ->
             when (index.rem(3)) {
@@ -43,8 +44,14 @@ class WaterMeshBuilder {
         ambientLights.add(ambientLight)
         ambientLights.add(ambientLight)
 
+        // Add vegetation colour modifier
+        vegetationColours.add(vegetationValue)
+        vegetationColours.add(vegetationValue)
+        vegetationColours.add(vegetationValue)
+        vegetationColours.add(vegetationValue)
+
         // Add indices for triangle coordinates (offset by vertexCount so far)
-        val newIndices = ChunkMeshBuilder.INDICES_DELTA.map { it + vertexCount }.toTypedArray()
+        val newIndices = BlockMeshBuilder.INDICES_DELTA.map { it + vertexCount }.toTypedArray()
         indices.addAll(newIndices)
 
         // Update counts
@@ -53,9 +60,9 @@ class WaterMeshBuilder {
         faceCount++
     }
 
-    fun build(texture: Texture) = WaterMesh(vertices.toFloatArray(), textureCoordinates.toFloatArray(),
-            ambientLights.toFloatArray(), indices.toIntArray(), texture)
+    fun build() = ChunkMesh(vertices.toFloatArray(), textureCoordinates.toFloatArray(), ambientLights.toFloatArray(),
+            vegetationColours.toFloatArray(), indices.toIntArray()).apply { initialise() }
 
-    override fun toString() = "WaterMeshBuilder(vertexCount=$vertexCount, indexCount=$indexCount, faceCount=$faceCount)"
+    override fun toString() = "ChunkMeshBuilder(vertexCount=$vertexCount, indexCount=$indexCount, faceCount=$faceCount)"
 
 }

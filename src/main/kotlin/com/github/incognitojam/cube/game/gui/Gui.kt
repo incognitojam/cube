@@ -16,7 +16,7 @@ open class Gui {
 
     open fun render(shader: ShaderProgram, projectionMatrix: Matrix4f) {
         guiItems.forEach {
-            shader.setUniform("texture_sampler", 0)
+            shader.setUniform("textureSampler", 0)
             it.render(shader, projectionMatrix)
         }
     }

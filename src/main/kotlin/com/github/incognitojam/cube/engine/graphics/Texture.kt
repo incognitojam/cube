@@ -4,21 +4,28 @@ import com.github.incognitojam.cube.engine.file.FileUtils
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL30.glGenerateMipmap
 import java.io.InputStream
+import java.nio.ByteBuffer
 
-open class Texture private constructor(val width: Int, val height: Int, protected val id: Int) {
-
-    private constructor(parameters: Triple<Int, Int, Int>) : this(parameters.first, parameters.second, parameters.third)
-
-    constructor(filename: String) : this(loadTexture(filename))
-
-    constructor(inputStream: InputStream) : this(loadTexture(inputStream))
+open class Texture(var width: Int, var height: Int, val id: Int) {
 
     fun bind() {
         glBindTexture(GL_TEXTURE_2D, id)
     }
 
+    fun unbind() {
+        glBindTexture(GL_TEXTURE_2D, 0)
+    }
+
     fun delete() {
         glDeleteTextures(id)
+    }
+
+    fun update(width: Int, height: Int, buffer: ByteBuffer) {
+        uploadTexture(width, height, buffer)
+        setupTexture()
+
+        this.width = width
+        this.height = height
     }
 
     override fun toString(): String {
@@ -27,11 +34,13 @@ open class Texture private constructor(val width: Int, val height: Int, protecte
 
     companion object {
         @Throws(Exception::class)
-        private fun loadTexture(inputStream: InputStream): Triple<Int, Int, Int> {
+        fun loadTexture(inputStream: InputStream): Texture {
+            // Load the texture and metadata from the stream
             val (width, height, buffer) = FileUtils.loadImageResource(inputStream)
 
             // Create a new OpenGL texture
             val textureId = glGenTextures()
+
             // Bind the texture
             glBindTexture(GL_TEXTURE_2D, textureId)
 
@@ -39,21 +48,26 @@ open class Texture private constructor(val width: Int, val height: Int, protecte
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
             // Upload the texture data
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+            uploadTexture(width, height, buffer)
 
-            // Generate Mip Map
-            glGenerateMipmap(GL_TEXTURE_2D)
+            // Set texture parameters
+            setupTexture()
 
-            // Prevent blurriness with textures
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-
-            return Triple(width, height, textureId)
+            return Texture(width, height, textureId)
         }
 
         @Throws(Exception::class)
-        private fun loadTexture(filename: String): Triple<Int, Int, Int>
-            = loadTexture(FileUtils.loadInputStream(filename))
+        fun loadTexture(filename: String): Texture = loadTexture(FileUtils.loadInputStream(filename))
+
+        private fun uploadTexture(width: Int, height: Int, buffer: ByteBuffer) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+        }
+
+        private fun setupTexture() {
+            glGenerateMipmap(GL_TEXTURE_2D)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        }
     }
 
 }

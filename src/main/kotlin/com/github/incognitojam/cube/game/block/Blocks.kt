@@ -26,7 +26,7 @@ object Blocks {
         WATER = registerBlock(BlockWater(6))
         PUMPKIN = registerBlock(BlockPumpkin(7))
 
-        textureMap = TextureMap("textures/blocks/blocks.png", 16)
+        textureMap = TextureMap.loadTextureMap("textures/blocks/blocks.png", 16)
     }
 
     fun delete() = textureMap.delete()

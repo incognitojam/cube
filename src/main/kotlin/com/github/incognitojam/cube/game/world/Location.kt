@@ -4,9 +4,8 @@ import com.github.incognitojam.cube.engine.maths.MathsUtils
 import com.github.incognitojam.cube.game.block.Block
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.world.chunk.Chunk
-import org.joml.Vector3fc
-import org.joml.Vector3i
-import org.joml.Vector3ic
+import org.joml.*
+import java.lang.Math
 
 class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ: Int) {
 
@@ -90,6 +89,9 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
 
     companion object {
         const val CHUNK_SIZE: Int = 16
+        const val CHUNK_SIZEF: Float = CHUNK_SIZE.toFloat()
+        const val CHUNK_HALF: Int = CHUNK_SIZE / 2
+        const val CHUNK_HALFF: Float = CHUNK_HALF.toFloat()
         const val CHUNK_SIZE_SQUARED: Int = CHUNK_SIZE * CHUNK_SIZE
         const val CHUNK_SIZE_CUBED: Int = CHUNK_SIZE_SQUARED * CHUNK_SIZE
 
@@ -99,6 +101,10 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
 
         fun globalToLocal(global: Int): Int {
             return Math.floorMod(global, CHUNK_SIZE)
+        }
+
+        fun globalToLocal(globalX: Int, globalZ: Int): Vector2ic {
+            return Vector2i(globalToLocal(globalX), globalToLocal(globalZ))
         }
 
         fun globalToLocal(globalX: Int, globalY: Int, globalZ: Int): Vector3ic {
@@ -113,6 +119,10 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
             return Math.floorDiv(global, CHUNK_SIZE)
         }
 
+        fun globalToChunk(globalX: Int, globalZ: Int): Vector2ic {
+            return Vector2i(globalToChunk(globalX), globalToChunk(globalZ))
+        }
+
         fun globalToChunk(globalX: Int, globalY: Int, globalZ: Int): Vector3ic {
             return Vector3i(globalToChunk(globalX), globalToChunk(globalY), globalToChunk(globalZ))
         }
@@ -125,8 +135,16 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
             return (chunk * CHUNK_SIZE) + local
         }
 
+        fun localToGlobal(chunk: Chunk, localX: Int, localZ: Int): Vector2ic {
+            return Vector2i(localToGlobal(chunk.x, localX), localToGlobal(chunk.z, localZ)).toImmutable()
+        }
+
         fun localToGlobal(chunk: Chunk, localX: Int, localY: Int, localZ: Int): Vector3ic {
             return Vector3i(localToGlobal(chunk.x, localX), localToGlobal(chunk.y, localY), localToGlobal(chunk.z, localZ)).toImmutable()
+        }
+
+        fun localToGlobal(chunk: Chunk, local: Vector2ic): Vector2ic {
+            return localToGlobal(chunk, local.x(), local.y())
         }
 
         fun localToGlobal(chunk: Chunk, local: Vector3ic): Vector3ic {
@@ -137,8 +155,16 @@ class Location(val world: World, val globalX: Int, val globalY: Int, val globalZ
             return chunk * CHUNK_SIZE
         }
 
+        fun chunkToGlobal(chunkX: Int, chunkZ: Int): Vector2ic {
+            return Vector2i(chunkToGlobal(chunkX), chunkToGlobal(chunkZ))
+        }
+
         fun chunkToGlobal(chunkX: Int, chunkY: Int, chunkZ: Int): Vector3ic {
             return Vector3i(chunkToGlobal(chunkX), chunkToGlobal(chunkY), chunkToGlobal(chunkZ))
+        }
+
+        fun chunkToGlobal(chunkPosition: Vector2ic): Vector2ic {
+            return chunkToGlobal(chunkPosition.x(), chunkPosition.y())
         }
 
         fun chunkToGlobal(chunkPosition: Vector3ic): Vector3ic {

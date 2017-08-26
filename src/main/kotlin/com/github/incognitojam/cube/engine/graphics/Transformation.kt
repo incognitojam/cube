@@ -4,6 +4,7 @@ import com.github.incognitojam.cube.engine.maths.clone
 import com.github.incognitojam.cube.game.entity.Entity
 import com.github.incognitojam.cube.game.gui.GuiItem
 import com.github.incognitojam.cube.game.world.chunk.Chunk
+import org.joml.Math
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -25,9 +26,9 @@ object Transformation {
         return perspectiveMatrix.m00(xScale)
                 .m11(yScale)
                 .m22(-(zFar + zNear) / frustumLength)
-                .m23(-1.0F)
+                .m23(-1f)
                 .m32(-(2 * zNear * zFar) / frustumLength)
-                .m33(0F)
+                .m33(0f)
     }
 
     fun getOrthographicProjectionMatrix(left: Int, right: Int, bottom: Int, top: Int): Matrix4f {
@@ -45,28 +46,39 @@ object Transformation {
     }
 
     fun getViewMatrix(camera: Camera, viewMatrix: Matrix4f): Matrix4f {
+        val position = camera.position
         viewMatrix.identity()
                 .rotate(camera.rotationRadians.x(), Vector3f(1f, 0f, 0f))
                 .rotate(camera.rotationRadians.y(), Vector3f(0f, 1f, 0f))
                 .rotate(camera.rotationRadians.z(), Vector3f(0f, 0f, 1f))
-                .translate(-camera.position.x, -camera.position.y, -camera.position.z)
+                .translate(-position.x(), -position.y(), -position.z())
         return viewMatrix
     }
 
-    fun buildModelMatrix(position: Vector3fc, rotation: Vector3fc, rotationOffset: Vector3f): Matrix4f {
+    fun getThirdPersonViewMatrix(camera: Camera, viewMatrix: Matrix4f): Matrix4f {
+        val position = camera.thirdPersonPosition
+        viewMatrix.identity()
+                .rotate(camera.rotationRadians.x(), Vector3f(1f, 0f, 0f))
+                .rotate(camera.rotationRadians.y(), Vector3f(0f, 1f, 0f))
+                .rotate(camera.rotationRadians.z(), Vector3f(0f, 0f, 1f))
+                .translate(-position.x(), -position.y(), -position.z())
+        return viewMatrix
+    }
+
+    fun buildModelMatrix(position: Vector3fc, rotation: Vector3fc, rotationOffset: Vector3fc): Matrix4f {
         return modelMatrix.translation(position)
                 .rotate(rotation.x(), Vector3f(1f, 0f, 0f))
                 .rotate(rotation.y(), Vector3f(0f, 1f, 0f))
                 .rotate(rotation.z(), Vector3f(0f, 0f, 1f))
-                .translate(rotationOffset.negate())
+                .translate(rotationOffset)
     }
 
     fun buildChunkModelMatrix(chunk: Chunk): Matrix4f {
-        return buildModelMatrix(chunk.worldPos, Vector3f(), Vector3f())
+        return buildModelMatrix(chunk.renderPos, Vector3f(), Vector3f())
     }
 
     fun buildEntityModelMatrix(entity: Entity): Matrix4f {
-        return buildModelMatrix(entity.position, entity.rotationRadians, Vector3f(entity.width / 2f, 0f, entity.width / 2f))
+        return buildModelMatrix(entity.position, entity.rotationRadians, entity.rotationOffset)
     }
 
     fun buildModelViewMatrix(modelMatrix: Matrix4f, viewMatrix: Matrix4f): Matrix4f {

@@ -2,10 +2,10 @@ package com.github.incognitojam.cube.game.world
 
 import com.github.incognitojam.cube.engine.Window
 import com.github.incognitojam.cube.engine.file.FileUtils
-import com.github.incognitojam.cube.engine.graphics.BasicMesh
 import com.github.incognitojam.cube.engine.graphics.Camera
 import com.github.incognitojam.cube.engine.graphics.ShaderProgram
 import com.github.incognitojam.cube.engine.graphics.Transformation
+import com.github.incognitojam.cube.engine.graphics.mesh.ColouredMesh
 import com.github.incognitojam.cube.game.world.chunk.Chunk
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -18,8 +18,8 @@ class WorldRenderer {
     private val basicShader = ShaderProgram()
     private val entityShader = ShaderProgram()
 
-    private lateinit var errorMesh: BasicMesh
-    private lateinit var targetBlockMesh: BasicMesh
+    private lateinit var errorMesh: ColouredMesh
+    private lateinit var targetBlockMesh: ColouredMesh
 
     var debug = false
 
@@ -73,8 +73,10 @@ class WorldRenderer {
                 6, 7, 3
         )
 
-        errorMesh = BasicMesh(positions, errorColours, indices)
-        targetBlockMesh = BasicMesh(positions, targetColours, indices)
+        errorMesh = ColouredMesh(positions, errorColours, indices)
+        errorMesh.initialise()
+        targetBlockMesh = ColouredMesh(positions, targetColours, indices)
+        targetBlockMesh.initialise()
 
         blockShader.initialise()
         blockShader.createVertexShader(FileUtils.loadTextResource("shaders/world.vertex.glsl"))
@@ -124,7 +126,10 @@ class WorldRenderer {
 
         val viewMatrix = camera.getViewMatrix()
         val chunks = ArrayList<Chunk>()
-        world.forChunksInRadius(world.player.location.chunk!!.chunkPosition, 3) { _, chunk -> chunk?.let { chunks.add(it) } }
+        val playerChunk = world.player.location.chunkPosition
+        world.forChunksInRadius(playerChunk, 4) { _, chunk ->
+            if (chunk != null && !chunk.empty) chunks.add(chunk)
+        }
 
         for (chunk in chunks) {
             val blockMesh = chunk.blockMesh ?: continue
@@ -188,7 +193,7 @@ class WorldRenderer {
                 basicShader.setUniform("modelViewMatrix", modelViewMatrix)
                 errorMesh.render(GL_LINE_LOOP)
 
-                modelMatrix = Transformation.buildModelMatrix(Vector3f(entity.position), Vector3f(), Vector3f())
+                modelMatrix = Transformation.buildModelMatrix(entity.position, Vector3f(), Vector3f())
                 modelViewMatrix = Transformation.buildModelViewMatrix(modelMatrix, viewMatrix)
                 basicShader.setUniform("modelViewMatrix", modelViewMatrix)
                 entityColliderMesh.render(GL_LINE_LOOP)
@@ -203,9 +208,9 @@ class WorldRenderer {
     fun delete() = blockShader.delete()
 
     companion object {
-        val FOV = 100.0F
-        val Z_NEAR = 0.1F
-        val Z_FAR = 1000F
+        val FOV = 100.0f
+        val Z_NEAR = 0.1f
+        val Z_FAR = 1000f
     }
 
 }

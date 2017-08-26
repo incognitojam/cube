@@ -1,12 +1,9 @@
 package com.github.incognitojam.cube.engine.graphics
 
-class TextureMap(val filename: String, private val size: Int) : Texture(filename) {
+class TextureMap private constructor(val filename: String, private val size: Int, width: Int, height: Int, id: Int) :
+        Texture(width, height, id) {
 
     private val unit = 1F / size
-
-    override fun toString(): String {
-        return "TextureMap(filename='$filename', size=$size, unit=$unit)"
-    }
 
     fun getTextureCoordinates(index: Int) = getTextureCoordinates(index % size, index / size)
 
@@ -20,6 +17,17 @@ class TextureMap(val filename: String, private val size: Int) : Texture(filename
                 textureX + unit, textureY, // Top right
                 textureX, textureY // Top left
         )
+    }
+
+    override fun toString(): String {
+        return "TextureMap(filename='$filename', size=$size, unit=$unit)"
+    }
+
+    companion object {
+        fun loadTextureMap(filename: String, size: Int): TextureMap {
+            val texture = Texture.loadTexture(filename)
+            return TextureMap(filename, size, texture.width, texture.height, texture.id)
+        }
     }
 
 }

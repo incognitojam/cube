@@ -1,6 +1,11 @@
 package com.github.incognitojam.cube.game.gui
 
-import com.github.incognitojam.cube.engine.graphics.*
+import com.github.incognitojam.cube.engine.graphics.FontTexture
+import com.github.incognitojam.cube.engine.graphics.ShaderProgram
+import com.github.incognitojam.cube.engine.graphics.TextureMap
+import com.github.incognitojam.cube.engine.graphics.Transformation
+import com.github.incognitojam.cube.engine.graphics.mesh.BlockMeshBuilder
+import com.github.incognitojam.cube.engine.graphics.mesh.TexturedMesh
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.inventory.Inventory
 import com.github.incognitojam.cube.game.inventory.ItemStack
@@ -14,14 +19,14 @@ import java.awt.Font
 class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: TextureMap) : GuiItem() {
 
     private val hotbarSize = inventory.width
-    private val tileSize = 64F
-    private val itemSize = 48F
+    private val tileSize = 64
+    private val itemSize = 48
 
     private lateinit var hotbarFont: FontTexture
     private lateinit var quantityTexts: Array<TextItem>
-    private var selectedMesh: Mesh? = null
-    private var itemsMesh: Mesh? = null
-    private var blocksMesh: Mesh? = null
+    private var selectedMesh: TexturedMesh? = null
+    private var itemsMesh: TexturedMesh? = null
+    private var blocksMesh: TexturedMesh? = null
 
     override var width = tileSize * hotbarSize
     override var height = tileSize
@@ -38,23 +43,25 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
 
         for (hotbarIndex in 0 until hotbarSize) {
             positionsList.addAll(floatArrayOf(
-                    -(hotbarSize * tileSize * 0.5F) + hotbarIndex * tileSize, 0f, Z_POS,
-                    -(hotbarSize * tileSize * 0.5F) + hotbarIndex * tileSize, tileSize, Z_POS,
-                    -(hotbarSize * tileSize * 0.5F) + (hotbarIndex + 1) * tileSize, tileSize, Z_POS,
-                    -(hotbarSize * tileSize * 0.5F) + (hotbarIndex + 1) * tileSize, 0f, Z_POS
+                    -(hotbarSize * tileSize * 0.5f) + hotbarIndex * tileSize, 0f, Z_POS,
+                    -(hotbarSize * tileSize * 0.5f) + hotbarIndex * tileSize, tileSize.toFloat(), Z_POS,
+                    -(hotbarSize * tileSize * 0.5f) + (hotbarIndex + 1) * tileSize, tileSize.toFloat(), Z_POS,
+                    -(hotbarSize * tileSize * 0.5f) + (hotbarIndex + 1) * tileSize, 0f, Z_POS
             ).toList())
             textureCoordinatesList.addAll(guiTextures.getTextureCoordinates(1).toList())
-            indicesList.addAll(ChunkMeshBuilder.INDICES_DELTA.map { it + (hotbarIndex * 4) })
+            indicesList.addAll(BlockMeshBuilder.INDICES_DELTA.map { it + (hotbarIndex * 4) })
         }
-        mesh = Mesh(positionsList.toFloatArray(), textureCoordinatesList.toFloatArray(), indicesList.toIntArray(), guiTextures)
+        mesh = TexturedMesh(positionsList.toFloatArray(), textureCoordinatesList.toFloatArray(), indicesList.toIntArray(), guiTextures)
+        mesh?.initialise()
 
         val positions = floatArrayOf(
                 0f, 0f, Z_POS,
-                0f, tileSize, Z_POS,
-                tileSize, tileSize, Z_POS,
-                tileSize, 0f, Z_POS
+                0f, tileSize + 0f, Z_POS,
+                tileSize + 0f, tileSize + 0f, Z_POS,
+                tileSize + 0f, 0f, Z_POS
         )
-        selectedMesh = Mesh(positions, guiTextures.getTextureCoordinates(2), ChunkMeshBuilder.INDICES_DELTA, guiTextures)
+        selectedMesh = TexturedMesh(positions, guiTextures.getTextureCoordinates(2), BlockMeshBuilder.INDICES_DELTA, guiTextures)
+        selectedMesh?.initialise()
 
         updateHotbarItems()
     }
@@ -137,33 +144,35 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
 
                 if (block != null) {
                     blocksPositionsList.addAll(floatArrayOf(
-                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), tileSize - itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), tileSize - itemSize, Z_POS
+                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), tileSize - itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), tileSize - itemSize + 0f, Z_POS
                     ).toList())
                     blocksTextureCoordinatesList.addAll(block.getTextureCoordinates(Direction.UP).toList())
-                    blocksIndicesList.addAll(ChunkMeshBuilder.INDICES_DELTA.map { it + (blockCount * 4) })
+                    blocksIndicesList.addAll(BlockMeshBuilder.INDICES_DELTA.map { it + (blockCount * 4) })
                     blockCount++
                 } else {
                     itemsPositionsList.addAll(floatArrayOf(
-                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), tileSize - itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), itemSize, Z_POS,
-                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), tileSize - itemSize, Z_POS
+                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), tileSize - itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + hotbarIndex * tileSize + (tileSize - itemSize), itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), itemSize + 0f, Z_POS,
+                            -(hotbarSize * tileSize * .5F) + (hotbarIndex + 1) * tileSize - (tileSize - itemSize), tileSize - itemSize + 0f, Z_POS
                     ).toList())
                     blocksTextureCoordinatesList.addAll(item.getTextureCoordinates()!!.toList())
-                    blocksIndicesList.addAll(ChunkMeshBuilder.INDICES_DELTA.map { it + (itemCount * 4) })
+                    blocksIndicesList.addAll(BlockMeshBuilder.INDICES_DELTA.map { it + (itemCount * 4) })
                     itemCount++
                 }
             }
         }
 
-        itemsMesh?.deleteBuffers()
-        itemsMesh = Mesh(itemsPositionsList.toFloatArray(), itemsTextureCoordinatesList.toFloatArray(), itemsIndicesList.toIntArray(), Items.getTextureMap())
+        itemsMesh?.delete()
+        itemsMesh = TexturedMesh(itemsPositionsList.toFloatArray(), itemsTextureCoordinatesList.toFloatArray(), itemsIndicesList.toIntArray(), Items.getTextureMap())
+        itemsMesh?.initialise()
 
-        blocksMesh?.deleteBuffers()
-        blocksMesh = Mesh(blocksPositionsList.toFloatArray(), blocksTextureCoordinatesList.toFloatArray(), blocksIndicesList.toIntArray(), Blocks.getTextureMap())
+        blocksMesh?.delete()
+        blocksMesh = TexturedMesh(blocksPositionsList.toFloatArray(), blocksTextureCoordinatesList.toFloatArray(), blocksIndicesList.toIntArray(), Blocks.getTextureMap())
+        blocksMesh?.initialise()
 
         for ((index, quantityText, itemStack) in quantityTexts.withIndex().map { Triple(it.index, it.value, hotbarItems[it.index]) }) {
             if (itemStack.quantity == 0 || itemStack.item == Items.AIR) {
@@ -171,7 +180,7 @@ class GuiItemHotbar(private val inventory: Inventory, private val guiTextures: T
             } else {
                 quantityText.text = itemStack.quantity.toString()
                 quantityText.setPosition(
-                        -(hotbarSize * tileSize * .5F) + (index + 1) * tileSize - (tileSize - itemSize) - (quantityText.width / 2),
+                        -((hotbarSize * tileSize) / 2) + (index + 1) * tileSize - (tileSize - itemSize) - (quantityText.width / 2),
                         itemSize - (quantityText.height / 2)
                 )
             }

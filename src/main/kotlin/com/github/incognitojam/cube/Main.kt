@@ -1,7 +1,7 @@
 package com.github.incognitojam.cube
 
 import com.github.incognitojam.cube.engine.GameEngine
-import com.github.incognitojam.cube.game.GamCraft
+import com.github.incognitojam.cube.game.ProjectCube
 
 fun main(args: Array<String>) {
 
@@ -9,7 +9,7 @@ fun main(args: Array<String>) {
     System.setProperty("java.awt.headless", "true")
 
     val vSync = true
-    val gameLogic = GamCraft()
+    val gameLogic = ProjectCube()
     val gameEngine = GameEngine("Project Cube", 1600, 900, vSync, gameLogic)
 
     try {

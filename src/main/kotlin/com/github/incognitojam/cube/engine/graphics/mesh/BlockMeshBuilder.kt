@@ -1,7 +1,6 @@
-package com.github.incognitojam.cube.engine.graphics
+package com.github.incognitojam.cube.engine.graphics.mesh
 
 import com.github.incognitojam.cube.game.block.Block
-import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.world.Direction
 import com.github.incognitojam.cube.game.world.Direction.*
 
@@ -16,45 +15,44 @@ class BlockMeshBuilder {
     private var indexCount = 0
     private var faceCount = 0
 
-    fun getBlockMesh(block: Block, scale: Float): BlockMesh {
-        for (direction in Direction.values()) {
-            val faceVertices: FloatArray
-            val ambientLight: Float
-
-            when (direction) {
-                NORTH -> {
-                    faceVertices = BACK_VERTICES
-                    ambientLight = LIGHT_Z
-                }
-                EAST -> {
-                    faceVertices = RIGHT_VERTICES
-                    ambientLight = LIGHT_X
-                }
-                SOUTH -> {
-                    faceVertices = FRONT_VERTICES
-                    ambientLight = LIGHT_Z
-                }
-                WEST -> {
-                    faceVertices = LEFT_VERTICES
-                    ambientLight = LIGHT_X
-                }
-                UP -> {
-                    faceVertices = TOP_VERTICES
-                    ambientLight = LIGHT_TOP
-                }
-                else -> {
-                    faceVertices = BOTTOM_VERTICES
-                    ambientLight = LIGHT_BOTTOM
-                }
-            }
-            val faceTextureCoordinates = block.getTextureCoordinates(direction, true)
-            addFace(faceVertices, faceTextureCoordinates, ambientLight, scale)
-        }
-
-        return build(Blocks.getTextureMap())
+    fun addBlock(block: Block, scale: Float, itemDrop: Boolean) {
+        for (direction in Direction.values()) addFace(block, direction, scale, itemDrop)
     }
 
-    private fun addFace(faceVertices: FloatArray, faceTextureCoordinates: FloatArray, ambientLight: Float, scale: Float) {
+    fun addFace(block: Block, direction: Direction, scale: Float = 1f, itemDrop: Boolean = false) {
+        val faceVertices: FloatArray
+        val ambientLight: Float
+
+        when (direction) {
+            NORTH -> {
+                faceVertices = BACK_VERTICES
+                ambientLight = LIGHT_Z
+            }
+            EAST -> {
+                faceVertices = RIGHT_VERTICES
+                ambientLight = LIGHT_X
+            }
+            SOUTH -> {
+                faceVertices = FRONT_VERTICES
+                ambientLight = LIGHT_Z
+            }
+            WEST -> {
+                faceVertices = LEFT_VERTICES
+                ambientLight = LIGHT_X
+            }
+            UP -> {
+                faceVertices = TOP_VERTICES
+                ambientLight = LIGHT_TOP
+            }
+            else -> {
+                faceVertices = BOTTOM_VERTICES
+                ambientLight = LIGHT_BOTTOM
+            }
+        }
+        addFace(faceVertices, block.getTextureCoordinates(direction, itemDrop), ambientLight, scale)
+    }
+
+    fun addFace(faceVertices: FloatArray, faceTextureCoordinates: FloatArray, ambientLight: Float, scale: Float) {
         val newVertices = faceVertices.map { it * scale }.toTypedArray()
         vertices.addAll(newVertices)
 
@@ -78,8 +76,8 @@ class BlockMeshBuilder {
         faceCount++
     }
 
-    private fun build(texture: Texture) = BlockMesh(vertices.toFloatArray(), textureCoordinates.toFloatArray(), ambientLights
-            .toFloatArray(), indices.toIntArray(), texture)
+    fun build() = BlockMesh(vertices.toFloatArray(), textureCoordinates.toFloatArray(), ambientLights.toFloatArray(), indices.toIntArray())
+            .apply { initialise() }
 
     override fun toString() = "BlockMeshBuilder(vertexCount=$vertexCount, indexCount=$indexCount, faceCount=$faceCount)"
 
@@ -144,6 +142,17 @@ class BlockMeshBuilder {
                 1f, 1f, 1f
         )
 
+        fun getVertices(direction: Direction): FloatArray {
+            return when(direction) {
+                NORTH -> BACK_VERTICES
+                EAST -> RIGHT_VERTICES
+                SOUTH -> FRONT_VERTICES
+                WEST -> LEFT_VERTICES
+                UP -> TOP_VERTICES
+                DOWN -> BOTTOM_VERTICES
+            }
+        }
+
 
         // Indices delta
         val INDICES_DELTA = intArrayOf(
@@ -157,6 +166,15 @@ class BlockMeshBuilder {
         val LIGHT_X = 0.8f
         val LIGHT_Z = 0.6f
         val LIGHT_BOTTOM = 0.4f
+
+        fun getAmbientLight(direction: Direction): Float {
+            return when(direction) {
+                NORTH, SOUTH -> LIGHT_Z
+                EAST, WEST -> LIGHT_X
+                UP -> LIGHT_TOP
+                DOWN -> LIGHT_BOTTOM
+            }
+        }
     }
 
 }

@@ -6,18 +6,19 @@ import com.github.incognitojam.cube.engine.graphics.Camera
 import com.github.incognitojam.cube.engine.maths.cos
 import com.github.incognitojam.cube.engine.maths.sin
 import com.github.incognitojam.cube.engine.maths.toRadians
-import com.github.incognitojam.cube.game.GamCraft
+import com.github.incognitojam.cube.game.ProjectCube
 import com.github.incognitojam.cube.game.block.Blocks
 import com.github.incognitojam.cube.game.inventory.ItemStack
 import com.github.incognitojam.cube.game.item.Items
 import com.github.incognitojam.cube.game.world.Direction
 import com.github.incognitojam.cube.game.world.World
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector3i
 import org.lwjgl.glfw.GLFW.*
 import java.util.*
 
-class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
+class EntityPlayer(world: World) : EntityHuman(world) {
 
     var jumpCooldown = 0
     var jumping: Boolean
@@ -25,12 +26,14 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
         set(value) {
             jumpCooldown = if (value) 6 else 0
         }
+    private var sprinting = false
+    private var crouching = false
 
     val camera = Camera(height * 0.75f)
     val targetBlock = Vector3i()
-    var targetFace = Direction.UP
-    var interactCooldown = 0
-    var interacting
+    private var targetFace = Direction.UP
+    private var interactCooldown = 0
+    private var interacting
         get() = interactCooldown > 0
         set(value) {
             interactCooldown = if (value) 5 else 0
@@ -46,24 +49,27 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
         val jump = window.isKeyPressed(GLFW_KEY_SPACE)
         val use = window.isKeyPressed(GLFW_KEY_E)
 
+        sprinting = sprint
+        crouching = crouch
+
         val bothAxes = (forward || backward) && (left || right)
         val speedModifier = when {
-            crouch -> GamCraft.PLAYER_CROUCH_FORCE
-            sprint -> GamCraft.PLAYER_RUN_FORCE
-            else -> GamCraft.PLAYER_WALK_FORCE
-        } * (if (bothAxes) 0.707F else 1F)
+            crouch -> ProjectCube.PLAYER_CROUCH_SPEED
+            sprint -> ProjectCube.PLAYER_RUN_SPEED
+            else -> ProjectCube.PLAYER_WALK_SPEED
+        } * (if (bothAxes) 0.707f else 1f)
 
-        val forceMod = if (grounded) 1f else 0.05f
+        val forceMod = if (grounded) 1.0f else 0.05f
 
-        if (forward) addForce(resolveMovement(0f, 0f, -speedModifier * forceMod))
-        if (backward) addForce(resolveMovement(0f, 0f, speedModifier * forceMod))
+        if (forward) velocity.add(resolveMovement(0f, 0f, -speedModifier * forceMod))
+        if (backward) velocity.add(resolveMovement(0f, 0f, speedModifier * forceMod))
 
-        if (left) addForce(resolveMovement(-speedModifier * forceMod, 0f, 0f))
-        if (right) addForce(resolveMovement(speedModifier * forceMod, 0f, 0f))
+        if (left) velocity.add(resolveMovement(-speedModifier * forceMod, 0f, 0f))
+        if (right) velocity.add(resolveMovement(speedModifier * forceMod, 0f, 0f))
 
         if (grounded && jump && !jumping) {
             jumping = true
-            addForce(0f, GamCraft.PLAYER_JUMP_FORCE, 0f, 2)
+            velocity.add(0f, ProjectCube.PLAYER_JUMP_SPEED, 0f)
         }
 
         if (mouseInput.scrollY < 0) {
@@ -85,7 +91,7 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
                 location.block = Blocks.AIR
                 interacting = true
 
-                world.dropItem(drop, Vector3f(location.globalPosition).add(.5f, .25f, .5f))
+                world.dropItem(drop, Vector3f(location.globalPosition).add(0.5f, 0.25f, 0.5f))
             }
 
             if (mouseInput.rightButtonPressed && !interacting) {
@@ -121,24 +127,37 @@ class EntityPlayer(world: World, name: String) : EntityHuman(world, name) {
 
         if (grounded && jumpCooldown > 0) jumpCooldown--
         if (interacting) interactCooldown--
+
+        val maxSpeed = when {
+            sprinting -> ProjectCube.PLAYER_RUN_SPEED
+            crouching -> ProjectCube.PLAYER_CROUCH_SPEED
+            else -> ProjectCube.PLAYER_WALK_SPEED
+        }
+
+        val velocityHorizontal = Vector3f(velocity.x, 0f, velocity.z)
+        if (velocityHorizontal.lengthSquared() > maxSpeed * maxSpeed) {
+            velocityHorizontal.normalize(maxSpeed)
+            velocity.x = velocityHorizontal.x
+            velocity.z = velocityHorizontal.z
+        }
     }
 
-    override fun resolveMovement(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3f {
-        var modX = 0F
-        var modZ = 0F
-        if (deltaX != 0F) {
-            modX += (camera.yaw - 90f).toRadians().sin() * -1.0F * deltaX
-            modZ += (camera.yaw - 90f).toRadians().cos() * deltaX
+    override fun resolveMovement(deltaX: Float, deltaY: Float, deltaZ: Float): Vector3fc {
+        var modX = 0f
+        var modZ = 0f
+        if (deltaX != 0f) {
+            modX += (camera.pitch - 90f).toRadians().sin() * -1f * deltaX
+            modZ += (camera.pitch - 90f).toRadians().cos() * deltaX
         }
-        if (deltaZ != 0F) {
-            modX += camera.yaw.toRadians().sin() * -1.0F * deltaZ
-            modZ += camera.yaw.toRadians().cos() * deltaZ
+        if (deltaZ != 0f) {
+            modX += camera.pitch.toRadians().sin() * -1f * deltaZ
+            modZ += camera.pitch.toRadians().cos() * deltaZ
         }
 
         return Vector3f(modX, deltaY, modZ)
     }
 
-    override fun onPositionChange(deltaX: Float, deltaY: Float, deltaZ: Float) = camera.addPosition(deltaX, deltaY, deltaZ)
+    override fun onPositionChange(deltaX: Float, deltaY: Float, deltaZ: Float) = camera.setPosition(x, y + camera.eyeHeight, z)
 
     override fun onRotationChange(deltaYaw: Float, deltaPitch: Float) = camera.addRotation(deltaYaw, deltaPitch)
 

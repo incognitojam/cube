@@ -1,28 +1,26 @@
 @file:Suppress("NOTHING_TO_INLINE")
+
 package com.github.incognitojam.cube.engine.maths
 
 import org.joml.*
 import java.lang.Math
+import java.text.DecimalFormat
 
 object MathsUtils {
+
+    private val df = DecimalFormat().apply { maximumFractionDigits = 2 }
 
     fun positiveModulo(x: Int, n: Int) = (x % n + n) % n
 
     fun positiveModulo(x: Float, n: Float) = (x % n + n) % n
 
-    fun format(vector: Vector2fc, digits: Int)
-            = "x=" + format(vector.x(), digits) + ", y=" + format(vector.y(), digits)
+    fun format(vector: Vector2fc) = "x=${df.format(vector.x())}, y=${df.format(vector.y())}"
 
-    fun format(vector: Vector3fc, digits: Int)
-            = "x=" + format(vector.x(), digits) + ", y=" + format(vector.y(), digits) + ", z=" + format(vector.z(), digits)
+    fun format(vector: Vector3fc) = "x=${df.format(vector.x())}, y=${df.format(vector.y())}, z=${df.format(vector.z())}"
 
     fun format(vector: Vector2ic) = "x=" + vector.x() + ", y=" + vector.y()
 
     fun format(vector: Vector3ic) = "x=" + vector.x() + ", y=" + vector.y() + ", z=" + vector.z()
-
-    fun format(float: Float, digits: Int): String = java.lang.String.format("%.${digits}f", float)
-
-    fun format(double: Double, digits: Int): String = java.lang.String.format("%.${digits}f", double)
 
     fun floatVectorToIntVector(floatPos: Vector3fc): Vector3i {
         val x = floatPos.x().floorInt()
@@ -40,6 +38,20 @@ fun Vector3i.clone(): Vector3i = Vector3i(this)
 
 fun Matrix4f.clone(): Matrix4f = Matrix4f(this)
 
+operator fun Vector3fc.component1() = x()
+operator fun Vector3fc.component2() = y()
+operator fun Vector3fc.component3() = z()
+
+operator fun Vector3ic.component1() = x()
+operator fun Vector3ic.component2() = y()
+operator fun Vector3ic.component3() = z()
+
+operator fun Vector2fc.component1() = x()
+operator fun Vector2fc.component2() = y()
+
+operator fun Vector2ic.component1() = x()
+operator fun Vector2ic.component2() = y()
+
 /*
  * Copyright 2015 Michael Rozumyanskiy
  *
@@ -56,6 +68,7 @@ fun Matrix4f.clone(): Matrix4f = Matrix4f(this)
  * limitations under the License.
  */
 inline fun Double.sin(): Double = Math.sin(this)
+
 inline fun Double.cos(): Double = Math.cos(this)
 inline fun Double.tan(): Double = Math.tan(this)
 inline fun Double.asin(): Double = Math.asin(this)
@@ -70,7 +83,9 @@ inline fun Double.sqrt(): Double = Math.sqrt(this)
 inline fun Double.cbrt(): Double = Math.cbrt(this)
 inline fun Double.IEEEremainder(divisor: Double): Double = Math.IEEEremainder(this, divisor)
 inline fun Double.ceil(): Double = Math.ceil(this)
+inline fun Double.ceilInt(): Int = Math.ceil(this).toInt()
 inline fun Double.floor(): Double = Math.floor(this)
+inline fun Double.floorInt(): Int = Math.floor(this).toInt()
 inline fun Double.rint(): Double = Math.rint(this)
 inline fun Double.atan2(x: Double): Double = Math.atan2(this, x)
 inline fun Double.pow(exp: Double): Double = Math.pow(this, exp)
